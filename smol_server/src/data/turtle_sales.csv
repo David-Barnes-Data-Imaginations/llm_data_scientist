@@ -1,0 +1,353 @@
+Product,Ranking,Platform,Year,Genre,Publisher,NA_Sales,EU_Sales,Global_Sales
+107,1,Wii,2006,Sports,Nintendo,34.02,23.8,67.85
+123,2,NES,1985,Platform,Nintendo,23.85,2.94,33
+195,3,Wii,2008,Racing,Nintendo,13,10.56,29.37
+231,4,Wii,2009,Sports,Nintendo,12.92,9.03,27.06
+249,5,GB,1996,Role-Playing,Nintendo,9.24,7.29,25.72
+254,6,GB,1989,Puzzle,Nintendo,19.02,1.85,24.81
+263,7,DS,2006,Platform,Nintendo,9.33,7.57,24.61
+283,8,Wii,2006,Misc,Nintendo,11.5,7.54,23.8
+291,9,Wii,2009,Platform,Nintendo,11.96,5.79,23.47
+326,10,NES,1984,Shooter,Nintendo,22.08,0.52,23.21
+399,11,DS,2005,Simulation,Nintendo,7.44,9.02,20.3
+405,12,DS,2005,Racing,Nintendo,8.04,6.21,19.2
+453,13,GB,1999,Role-Playing,Nintendo,7.38,5.07,18.94
+466,14,Wii,2007,Sports,Nintendo,7.33,6.58,18.63
+486,15,Wii,2009,Sports,Nintendo,7.45,7.04,18.04
+504,16,X360,2010,Misc,Microsoft Game Studios,12.28,4.05,17.89
+515,17,PS3,2013,Action,Take-Two Interactive,5.75,7.6,17.55
+518,18,PS2,2004,Action,Take-Two Interactive,7.73,0.33,17.06
+535,19,SNES,1990,Platform,Nintendo,10.48,3.08,16.9
+577,20,DS,2005,Misc,Nintendo,3.9,7.59,16.58
+615,21,DS,2006,Role-Playing,Nintendo,5.26,3.71,15.06
+618,22,GB,1989,Platform,Nintendo,8.88,2.22,14.87
+624,23,NES,1988,Platform,Nintendo,7.82,2.82,14.17
+515,24,X360,2013,Action,Take-Two Interactive,7.9,4.35,13.43
+629,25,PS2,2002,Action,Take-Two Interactive,6.9,4.5,13.24
+760,26,GBA,2002,Role-Playing,Nintendo,4.97,3.2,13
+811,27,DS,2010,Role-Playing,Nintendo,4.57,2.69,12.56
+815,28,DS,2005,Puzzle,Nintendo,2.82,4.4,12.55
+830,29,PS2,2001,Racing,Sony Computer Entertainment,5.62,4.17,12.28
+876,30,X360,2011,Shooter,Activision,7.4,3.51,12.1
+930,31,GB,1998,Role-Playing,Nintendo,4.83,4.13,12
+948,32,X360,2010,Shooter,Activision,7.93,3.06,12
+977,33,3DS,2013,Role-Playing,Nintendo,4.24,3.32,11.77
+978,34,PS4,2015,Shooter,Activision,4.73,4.76,11.68
+979,35,PS3,2012,Shooter,Activision,4.09,4.82,11.5
+979,36,X360,2012,Shooter,Activision,6.77,3.53,11.26
+999,37,X360,2009,Shooter,Activision,6.99,2.98,11.08
+876,38,PS3,2011,Shooter,Activision,4.54,4.77,11.04
+1012,39,PS2,2001,Action,Take-Two Interactive,5.73,3.7,10.74
+1031,40,Wii,2008,Fighting,Nintendo,5.54,2.14,10.69
+948,41,PS3,2010,Shooter,Activision,4.9,3.64,10.44
+1175,42,DS,2005,Simulation,Nintendo,2.09,2.89,10.06
+1183,43,3DS,2011,Racing,Nintendo,3.89,3.21,10.01
+1212,44,X360,2007,Shooter,Microsoft Game Studios,6.54,2.32,9.95
+515,45,PS4,2014,Action,Take-Two Interactive,3.12,4.76,9.82
+1241,46,DS,2009,Action,Nintendo,3.61,2.27,9.76
+1307,47,N64,1996,Platform,Nintendo,5.67,2.34,9.75
+1459,48,PS2,2004,Racing,Sony Computer Entertainment,2.47,0.01,9.56
+1463,49,Wii,2007,Platform,Nintendo,5.05,2.79,9.45
+1473,50,3DS,2014,Role-Playing,Nintendo,3.47,2.76,9.29
+1497,51,GB,1992,Adventure,Nintendo,5.05,1.67,9.17
+1501,52,X360,2008,Action,Take-Two Interactive,5.54,2.54,9.04
+1506,53,PS,1997,Racing,Sony Computer Entertainment,3.3,3.17,8.98
+1577,54,3DS,2011,Platform,Nintendo,4.01,2.45,8.85
+1581,55,PS3,2010,Racing,Sony Computer Entertainment,2.43,4,8.83
+999,56,PS3,2009,Shooter,Activision,4.09,3.03,8.77
+1501,57,PS3,2008,Action,Take-Two Interactive,3.9,3.08,8.67
+1592,58,SNES,1993,Platform,Nintendo,4.91,1.76,8.65
+1618,59,GBA,2004,Role-Playing,Nintendo,3.56,2.17,8.6
+1307,60,DS,2004,Platform,Nintendo,4.17,2.55,8.54
+1940,61,Wii,2011,Misc,Ubisoft,4.96,2.58,8.41
+1945,62,X360,2013,Shooter,Activision,5.51,2.16,8.37
+1970,63,X360,2010,Shooter,Microsoft Game Studios,5.76,1.62,8.1
+2079,64,N64,1996,Racing,Nintendo,4.55,1.59,8.09
+2114,65,3DS,2012,Platform,Nintendo,3,2.52,8.05
+2130,66,X360,2012,Shooter,Microsoft Game Studios,5.44,1.94,8
+2139,67,PS,1997,Role-Playing,Sony Computer Entertainment,2.47,2.03,7.97
+1945,68,PS3,2013,Shooter,Activision,3.35,3.06,7.86
+2162,69,Wii,2010,Misc,Ubisoft,4.79,2.37,7.81
+2173,70,PS,1999,Racing,Sony Computer Entertainment,3.18,2.8,7.78
+2253,71,X360,2007,Shooter,Activision,4.85,1.95,7.64
+2261,72,SNES,1994,Platform,Nintendo,3.58,1.4,7.63
+2285,73,X360,2013,Misc,Microsoft Game Studios,4.58,2.32,7.54
+2286,74,3DS,2012,Simulation,Nintendo,1.65,1.9,7.45
+2296,75,DS,2007,Misc,Nintendo,3.66,1.54,7.4
+2324,76,X360,2011,Role-Playing,Bethesda Softworks,4.12,2.35,7.25
+2326,77,SNES,1992,Racing,Nintendo,2.9,1.02,7.18
+2371,78,PS4,2015,Sports,Electronic Arts,0.91,4.97,6.96
+2387,79,Wii,2010,Misc,Nintendo,1.47,2.89,6.96
+2404,80,XB,2004,Shooter,Microsoft Game Studios,5.59,1.25,6.96
+2457,81,Wii,2007,Misc,Nintendo,3.12,1.89,6.9
+2495,82,DS,2012,Role-Playing,Nintendo,2.39,1.53,6.83
+2518,83,PS3,2012,Action,Electronic Arts,0.87,4.14,6.76
+2521,84,PC,2009,Simulation,Electronic Arts,0.8,5.26,6.65
+2793,85,N64,1997,Shooter,Nintendo,4.76,1.65,6.63
+2795,86,Wii,2007,Sports,Sega,2.12,3.2,6.61
+2807,87,PS2,2001,Role-Playing,Sony Computer Entertainment,2.39,1.7,6.6
+2811,88,PS,1999,Role-Playing,SquareSoft,1.87,1.41,6.45
+2814,89,DS,2008,Role-Playing,Nintendo,2.31,1.46,6.43
+2829,90,2600,1982,Puzzle,Atari,5.97,0.37,6.4
+2849,91,PSP,2005,Action,Take-Two Interactive,2.38,2.32,6.33
+2870,92,Wii,2010,Platform,Nintendo,3,1.98,6.31
+2874,93,PS4,2015,Shooter,Electronic Arts,2.4,2.7,6.29
+2877,94,PS4,2014,Shooter,Activision,2.3,2.71,6.23
+3112,95,N64,1998,Action,Nintendo,3.36,1.55,6.23
+3153,96,PS,1997,Platform,Sony Computer Entertainment,3.1,1.78,6.22
+3158,97,NES,1988,Platform,Nintendo,4.42,0.97,6.12
+3165,98,3DS,2014,Fighting,Nintendo,2.66,1.11,6.11
+3267,99,X360,2008,Shooter,Activision,3.93,1.56,6.04
+3277,100,X360,2011,Shooter,Electronic Arts,3.66,1.75,6.02
+3403,101,Wii,2006,Action,Nintendo,3.14,1.8,5.99
+978,102,XOne,2015,Shooter,Activision,3.71,1.71,5.99
+3427,103,Wii,2009,Misc,Ubisoft,2.88,2.48,5.96
+3277,104,PS3,2011,Shooter,Electronic Arts,2.34,2.4,5.93
+3436,105,PS2,2003,Racing,Electronic Arts,2.68,2.32,5.9
+3478,106,PS,1998,Fighting,Sony Computer Entertainment,2.68,1.82,5.87
+3498,107,PS,1998,Platform,Sony Computer Entertainment,3.02,1.44,5.85
+3524,108,GC,2001,Fighting,Nintendo,3.62,0.85,5.8
+3525,109,WiiU,2014,Racing,Nintendo,2.57,1.7,5.71
+3547,110,PS4,2015,Role-Playing,Bethesda Softworks,2.03,2.58,5.71
+3619,111,GC,2003,Racing,Nintendo,3.38,1.45,5.7
+3629,112,Wii,2012,Misc,Ubisoft,3.39,1.81,5.67
+3645,113,PS3,2013,Sports,Electronic Arts,0.64,3.54,5.66
+3657,114,PS2,2004,Racing,Electronic Arts,2.22,2.48,5.66
+3667,115,PS2,2002,Shooter,Electronic Arts,2.4,2.26,5.6
+3678,116,PS3,2011,Action,Sony Computer Entertainment,2.27,2.3,5.6
+3711,117,PS,1996,Platform,Sony Computer Entertainment,2.65,1.93,5.59
+3865,118,Wii,2010,Sports,505 Games,2.87,2.16,5.58
+3878,119,X360,2008,Shooter,Microsoft Game Studios,3.4,1.57,5.54
+3885,120,PS3,2009,Action,Sony Computer Entertainment,2.68,1.85,5.52
+2253,121,PS3,2007,Shooter,Activision,2.54,1.89,5.51
+3887,122,PS3,2011,Sports,Electronic Arts,0.69,3.54,5.49
+3896,123,DS,2005,Misc,Nintendo,1.37,2.28,5.47
+3955,124,PS3,2010,Action,Take-Two Interactive,2.29,2.14,5.41
+3967,125,PS4,2014,Sports,Electronic Arts,0.65,3.52,5.4
+4047,126,Wii,2010,Platform,Nintendo,2.67,1.51,5.4
+2324,127,PS3,2011,Role-Playing,Bethesda Softworks,2.09,2.22,5.38
+4065,128,NES,1986,Action,Nintendo,3.07,0.76,5.34
+4390,129,PS3,2012,Action,Ubisoft,2.16,2.1,5.33
+4399,130,XB,2001,Shooter,Microsoft Game Studios,4.08,1.07,5.27
+4405,131,GBA,2004,Role-Playing,Nintendo,2.11,1.3,5.26
+4415,132,PS2,2002,Role-Playing,Sony Computer Entertainment,2.98,0.98,5.25
+4452,133,GB,2000,Role-Playing,Nintendo,2.09,1.28,5.24
+4459,134,X360,2009,Shooter,Microsoft Game Studios,3.56,1.11,5.22
+3955,135,X360,2010,Action,Take-Two Interactive,3.03,1.62,5.2
+4470,136,GC,2002,Platform,Nintendo,3.29,1.03,5.17
+4477,137,SNES,1992,Fighting,Capcom,2.03,0.68,5.17
+4491,138,PC,2004,Role-Playing,Activision,0.06,5.09,5.15
+4619,139,PS,1999,Action,GT Interactive,2.55,2.3,5.14
+4673,140,X360,2010,Sports,Microsoft Game Studios,3.21,1.46,5.12
+4692,141,X360,2011,Shooter,Microsoft Game Studios,3.32,1.33,5.12
+4702,142,X360,2006,Shooter,Microsoft Game Studios,2.9,1.56,5.01
+4712,143,PS2,2001,Action,Konami Digital Entertainment,2.01,1.65,4.96
+5429,144,GEN,1992,Platform,Sega,3.67,0.98,4.94
+5430,145,PS3,2008,Action,Konami Digital Entertainment,2.16,1.43,4.94
+5453,146,PS,1998,Action,Konami Digital Entertainment,2.61,1.5,4.94
+5493,147,PS3,2013,Action,Sony Computer Entertainment Europe,1.98,1.87,4.91
+5510,148,PS2,2006,Role-Playing,Square Enix,1.54,0,4.88
+5512,149,PS3,2008,Platform,Sony Computer Entertainment,2.3,1.68,4.85
+5726,150,DS,2009,Role-Playing,Nintendo,0.54,0.57,4.79
+5740,151,Wii,2007,Action,LucasArts,3,1.34,4.78
+5758,152,PS,1998,Action,Virgin Interactive,1.54,1.21,4.77
+6215,153,PS,1996,Fighting,Sony Computer Entertainment,1.85,1.55,4.71
+6233,154,DS,2006,Simulation,505 Games,2.57,1.59,4.69
+6271,155,PS4,2014,Shooter,Activision,2.04,1.68,4.63
+254,156,NES,1988,Puzzle,Nintendo,2.44,0.57,4.58
+6287,157,PS3,2009,Action,Ubisoft,2.08,1.6,4.57
+6310,158,N64,1999,Fighting,Nintendo,2.42,0.49,4.55
+6424,159,X360,2007,Adventure,Ubisoft,2.69,1.35,4.55
+6431,160,PS3,2011,Action,Warner Bros. Interactive Entertainment,2.21,1.57,4.53
+6466,161,X360,2009,Racing,Microsoft Game Studios,2.45,1.57,4.52
+6471,162,PSP,2008,Role-Playing,Capcom,0.39,0.47,4.51
+6504,163,GBA,2001,Platform,Nintendo,2.57,1.02,4.5
+6507,164,GBA,2001,Racing,Nintendo,2.15,1.34,4.49
+535,165,GBA,2001,Platform,Nintendo,2.63,0.91,4.48
+6646,166,N64,1999,Strategy,Nintendo,2.61,1.02,4.47
+3267,167,PS3,2008,Shooter,Activision,2.23,1.53,4.45
+6678,168,PS2,2001,Platform,Universal Interactive,1.7,1.88,4.44
+2285,169,PS3,2014,Misc,Sony Computer Entertainment,1.62,2.06,4.44
+6694,170,PS3,2009,Role-Playing,Square Enix,1.43,1.02,4.4
+6715,171,GB,1989,Puzzle,Nintendo,1.79,0.79,4.38
+6720,172,GB,1999,Misc,Nintendo,2.48,0.92,4.35
+4390,173,X360,2012,Action,Ubisoft,2.57,1.4,4.35
+6721,174,PS,2000,Role-Playing,SquareSoft,1.33,0.63,4.35
+6770,175,PS2,2003,Role-Playing,Electronic Arts,1.57,0.89,4.34
+6815,176,N64,1999,Platform,Nintendo,2.73,0.65,4.32
+6287,177,X360,2009,Action,Ubisoft,2.54,1.28,4.32
+7042,178,DS,2007,Puzzle,Nintendo,1,2.03,4.31
+7101,179,PS,1997,Action,Eidos Interactive,1.89,2.02,4.3
+7141,180,PS2,,Sports,Electronic Arts,3.49,0.21,4.29
+7143,181,PS2,2004,Role-Playing,Square Enix,0.53,0.62,4.27
+7373,182,PC,2012,Role-Playing,Activision,1.99,1.76,4.26
+624,183,GBA,2003,Platform,Nintendo,2.4,1.03,4.26
+7381,184,WiiU,2012,Platform,Nintendo,1.9,1.07,4.26
+7384,185,GB,1994,Platform,Nintendo,2.04,0.8,4.26
+2518,186,X360,2012,Action,Electronic Arts,0.89,2.85,4.25
+7532,187,DS,2007,Action,Nintendo,1.56,1.5,4.24
+7533,188,SNES,1995,Platform,Nintendo,1.72,0.61,4.22
+7573,189,3DS,2013,Simulation,Nintendo,0.79,1.66,4.22
+2795,190,DS,2008,Sports,Sega,1.34,2.03,4.21
+7600,191,PS2,2003,Shooter,Electronic Arts,1.62,1.83,4.21
+8235,192,GB,1992,Platform,Nintendo,2.22,0.5,4.21
+8275,193,X360,2010,Role-Playing,Microsoft Game Studios,2.94,0.91,4.21
+2877,194,XOne,2014,Shooter,Activision,2.63,1.25,4.21
+8923,195,PC,1996,Simulation,Microsoft Game Studios,2.64,1.39,4.2
+8933,196,PS2,2006,Misc,RedOctane,3.12,0.52,4.2
+8962,197,PS3,2009,Action,Capcom,1.61,1.17,4.19
+515,198,XOne,2014,Action,Take-Two Interactive,2.18,1.65,4.17
+9064,199,PSP,2006,Action,Take-Two Interactive,1.39,1.66,4.17
+9080,200,PS3,2010,Sports,Electronic Arts,0.49,2.7,4.17
+123,201,GB,1999,Platform,Nintendo,2.79,1.07,4.16
+3165,204,WiiU,2014,Fighting,Nintendo,2.12,0.87,4.12
+5740,213,DS,2007,Action,LucasArts,2.37,1.26,4.02
+6715,216,NES,1990,Puzzle,Nintendo,2.15,0.49,3.98
+6424,219,PS3,2007,Adventure,Ubisoft,1.57,1.64,3.96
+3967,220,PS3,2014,Sports,Electronic Arts,0.47,2.57,3.95
+6431,223,X360,2011,Action,Warner Bros. Interactive Entertainment,2.45,1.07,3.9
+5493,237,PS4,2014,Action,Sony Computer Entertainment,1.46,1.53,3.73
+2877,245,PS3,2014,Shooter,Activision,1.26,1.59,3.65
+3645,257,X360,2013,Sports,Electronic Arts,0.75,2.4,3.53
+2877,258,X360,2014,Shooter,Activision,2.26,0.97,3.53
+3112,269,3DS,2011,Action,Nintendo,1.66,1.04,3.45
+3887,276,X360,2011,Sports,Electronic Arts,0.69,2.29,3.44
+3547,288,XOne,2015,Role-Playing,Bethesda Softworks,2.01,1.03,3.35
+2285,298,PS4,2014,Misc,Sony Computer Entertainment Europe,1.13,1.53,3.3
+2324,311,PC,2011,Role-Playing,Bethesda Softworks,0.94,1.71,3.18
+1945,350,PS4,2013,Shooter,Activision,1.46,1.16,2.98
+2849,361,PS2,2006,Action,Take-Two Interactive,1.28,1.15,2.9
+9080,367,X360,2010,Sports,Electronic Arts,0.58,1.97,2.89
+8962,372,X360,2009,Action,Capcom,1.73,0.77,2.88
+2874,379,XOne,2015,Shooter,Electronic Arts,1.59,1,2.86
+6271,411,XOne,2014,Shooter,Activision,1.75,0.75,2.69
+2371,417,XOne,2015,Sports,Electronic Arts,0.72,1.73,2.65
+3967,450,X360,2014,Sports,Electronic Arts,0.64,1.66,2.55
+3645,494,PS4,2013,Sports,Electronic Arts,0.5,1.52,2.38
+1945,506,XOne,2013,Shooter,Activision,1.53,0.63,2.35
+2371,514,PS3,2015,Sports,Electronic Arts,0.33,1.62,2.34
+3277,534,PC,2011,Shooter,Electronic Arts,0.73,1.17,2.29
+5740,576,X360,2007,Action,LucasArts,1.25,0.71,2.16
+5512,593,PSP,2009,Platform,Sony Computer Entertainment,0.52,1.02,2.12
+2285,644,XOne,2014,Misc,Microsoft Game Studios,1.17,0.62,1.98
+3865,652,X360,2010,Sports,505 Games,1.43,0.39,1.96
+5740,659,PS3,2007,Action,LucasArts,0.84,0.8,1.95
+2521,681,X360,2010,Simulation,Electronic Arts,1.04,0.71,1.91
+7101,696,PC,1997,Action,Eidos Interactive,0.75,1.03,1.88
+3657,698,XB,2004,Racing,Electronic Arts,1.13,0.66,1.87
+2285,715,PSV,2014,Misc,Sony Computer Entertainment Europe,0.23,0.65,1.85
+8933,737,X360,2007,Misc,Activision,1.65,0.02,1.8
+2261,746,GB,2000,Platform,Nintendo,0.85,0.59,1.8
+6694,754,X360,2010,Role-Playing,Square Enix,1.04,0.56,1.78
+3967,762,XOne,2014,Sports,Electronic Arts,0.49,1.16,1.76
+2521,816,PS3,2010,Simulation,Electronic Arts,0.6,0.8,1.69
+7373,828,PS3,2013,Role-Playing,Activision,0.58,0.68,1.68
+2261,836,GBA,2003,Platform,Nintendo,0.98,0.39,1.67
+1940,840,X360,2011,Misc,Ubisoft,1.21,0.33,1.66
+3267,863,Wii,2008,Shooter,Activision,0.98,0.48,1.62
+6271,873,X360,2014,Shooter,Activision,1.07,0.4,1.6
+518,875,XB,2005,Action,Take-Two Interactive,1.03,0.5,1.6
+4047,924,3DS,2013,Platform,Nintendo,0.6,0.51,1.53
+978,969,PS3,2015,Shooter,Activision,0.4,0.79,1.47
+978,1001,X360,2015,Shooter,Activision,0.91,0.39,1.44
+4415,1006,PS3,2013,Role-Playing,Square Enix,0.74,0.3,1.44
+7373,1024,PS4,2014,Role-Playing,Activision,0.4,0.72,1.43
+6271,1026,PS3,2014,Shooter,Activision,0.55,0.54,1.42
+876,1039,PC,2011,Shooter,Activision,0.34,0.8,1.41
+3436,1047,XB,2003,Racing,Electronic Arts,0.89,0.45,1.4
+2371,1065,X360,2015,Sports,Electronic Arts,0.45,0.83,1.39
+948,1128,PC,,Shooter,Activision,0.48,0.66,1.34
+3403,1162,GC,2006,Action,Nintendo,0.94,0.3,1.3
+979,1219,PC,2012,Shooter,Activision,0.52,0.57,1.25
+3667,1270,XB,2002,Shooter,Electronic Arts,0.82,0.35,1.22
+2521,1276,Wii,2010,Simulation,Electronic Arts,0.5,0.6,1.22
+7373,1318,X360,2013,Role-Playing,Activision,0.73,0.36,1.19
+948,1381,Wii,2010,Shooter,Activision,0.67,0.39,1.15
+6678,1616,XB,2002,Platform,Universal Interactive,0.48,0.47,1.01
+3547,1632,PC,2015,Role-Playing,Bethesda Softworks,0.41,0.52,1.01
+2829,1640,NES,1984,Puzzle,Namco Bandai Games,0.22,0.07,1
+9080,1656,PSP,2010,Sports,Electronic Arts,0.11,0.57,0.99
+3436,1663,GC,2003,Racing,Electronic Arts,0.57,0.39,0.99
+3645,1700,XOne,2013,Sports,Electronic Arts,0.34,0.54,0.98
+3629,1705,X360,2012,Misc,Ubisoft,0.74,0.16,0.98
+7600,1735,XB,2003,Shooter,Electronic Arts,0.62,0.3,0.96
+2253,1771,PC,2007,Shooter,Activision,0,0.92,0.94
+3657,1802,GC,2004,Racing,Electronic Arts,0.57,0.32,0.93
+7141,1883,XB,2003,Sports,Electronic Arts,0.84,0.02,0.89
+515,1898,PC,2015,Action,Take-Two Interactive,0.3,0.52,0.89
+9080,1905,Wii,2010,Sports,Electronic Arts,0.21,0.57,0.89
+2253,1946,DS,2007,Shooter,Activision,0.79,0.02,0.87
+518,2122,PC,2005,Action,Take-Two Interactive,0,0.75,0.8
+9064,2140,PS2,2007,Action,Take-Two Interactive,0.64,0.02,0.8
+4390,2204,PC,2012,Action,Ubisoft,0.23,0.43,0.77
+6424,2262,PC,2008,Adventure,Ubisoft,0.01,0.68,0.75
+3267,2290,DS,2008,Shooter,Activision,0.47,0.21,0.75
+999,2349,PC,2009,Shooter,Activision,0.01,0.65,0.73
+876,2352,Wii,2011,Shooter,Activision,0.49,0.17,0.73
+1501,2359,PC,2008,Action,Take-Two Interactive,0.01,0.65,0.72
+7143,2419,3DS,2015,Role-Playing,Square Enix,0,0,0.71
+3967,2477,PSV,2014,Sports,Electronic Arts,0.11,0.39,0.69
+3887,2621,Wii,2011,Sports,Electronic Arts,0.13,0.43,0.65
+2521,2692,3DS,2011,Simulation,Electronic Arts,0.25,0.3,0.62
+9080,2711,PS2,2010,Sports,Electronic Arts,0.09,0.24,0.62
+3967,2718,Wii,2014,Sports,Electronic Arts,0.2,0.38,0.62
+1945,2799,PC,2013,Shooter,Activision,0.19,0.34,0.6
+2518,2830,Wii,2012,Action,Electronic Arts,0.16,0.38,0.59
+9080,2856,DS,2010,Sports,Electronic Arts,0.11,0.41,0.59
+2521,2921,DS,2010,Simulation,Electronic Arts,0.32,0.21,0.57
+7373,3138,XOne,2014,Role-Playing,Activision,0.29,0.2,0.52
+1940,3212,PS3,2011,Misc,Ubisoft,0.27,0.17,0.52
+948,3213,DS,2010,Shooter,Activision,0.44,0.04,0.52
+3667,3395,GC,2002,Shooter,Electronic Arts,0.38,0.1,0.48
+6678,3409,GC,2002,Platform,Universal Interactive,0.38,0.1,0.48
+3865,3433,PS3,2010,Sports,505 Games,0.23,0.17,0.48
+6287,3528,PC,2010,Action,Ubisoft,0.01,0.37,0.47
+5758,3592,N64,1999,Action,Virgin Interactive,0.32,0.07,0.46
+2874,3757,PC,2015,Shooter,Electronic Arts,0.11,0.3,0.44
+3887,3789,PSP,2011,Sports,Electronic Arts,0.1,0.21,0.43
+6431,3791,PC,2011,Action,Warner Bros. Interactive Entertainment,0.13,0.23,0.43
+7141,3898,GC,2003,Sports,Electronic Arts,0.33,0.08,0.42
+3645,3990,PSV,2013,Sports,Electronic Arts,0.09,0.21,0.41
+2518,4120,WiiU,2012,Action,Electronic Arts,0.15,0.21,0.39
+2518,4180,PSV,2012,Action,Electronic Arts,0,0.25,0.39
+3887,4203,PC,2011,Sports,Electronic Arts,0.03,0.27,0.39
+3967,4370,3DS,2014,Sports,Electronic Arts,0.07,0.27,0.37
+3629,4475,PS3,2012,Misc,Ubisoft,0.21,0.1,0.36
+3657,4500,GBA,2004,Racing,Electronic Arts,0.25,0.1,0.35
+3645,4505,PC,2013,Sports,Electronic Arts,0.01,0.3,0.35
+2285,4515,WiiU,2016,Misc,Microsoft Game Studios,0.15,0.07,0.35
+3645,4540,Wii,2013,Sports,Electronic Arts,0,0.31,0.35
+979,4556,WiiU,2012,Shooter,Activision,0.17,0.15,0.35
+7600,4580,GC,2003,Shooter,Electronic Arts,0.27,0.07,0.34
+2877,4742,PC,2014,Shooter,Activision,0.11,0.19,0.34
+2518,4775,PC,2012,Action,Electronic Arts,0.02,0.25,0.34
+3887,4906,3DS,2011,Sports,Electronic Arts,0.07,0.21,0.32
+3629,4945,WiiU,2012,Misc,Ubisoft,0.18,0.11,0.32
+6431,4995,WiiU,2012,Action,Warner Bros. Interactive Entertainment,0.14,0.15,0.31
+2518,5131,PSP,2012,Action,Electronic Arts,0.04,0.16,0.3
+4390,5201,WiiU,2012,Action,Ubisoft,0.16,0.11,0.3
+1945,5220,WiiU,2013,Shooter,Activision,0.19,0.07,0.3
+8275,5700,PC,2011,Role-Playing,Microsoft Game Studios,0.07,0.14,0.26
+7141,5714,GBA,2003,Sports,Electronic Arts,0.18,0.07,0.25
+3967,5913,PC,2014,Sports,Electronic Arts,0,0.22,0.25
+3436,5970,GBA,2003,Racing,Electronic Arts,0.17,0.07,0.24
+2518,6022,3DS,2012,Action,Electronic Arts,0.05,0.16,0.24
+3645,6663,3DS,2013,Sports,Electronic Arts,0,0.19,0.21
+3645,7036,PSP,2013,Sports,Electronic Arts,0,0.13,0.19
+978,7052,PC,2015,Shooter,Activision,0,0.18,0.19
+3267,7951,PC,2008,Shooter,Activision,0.02,0.11,0.16
+9080,8096,PC,2010,Sports,Electronic Arts,0,0.11,0.15
+2371,8136,PC,2015,Sports,Electronic Arts,0.03,0.11,0.15
+3657,9254,DS,2005,Racing,Electronic Arts,0.09,0.02,0.11
+518,9829,X360,2008,Action,Take-Two Interactive,0.07,0.02,0.1
+2404,10818,PC,2007,Shooter,Microsoft Game Studios,0.01,0.05,0.08
+3887,11226,PS2,2011,Sports,Electronic Arts,0,0.02,0.07
+3657,11666,PC,2004,Racing,Electronic Arts,0,0.05,0.07
+5453,11950,GB,2000,Action,Konami Digital Entertainment,0,0,0.06
+8962,12096,PC,2009,Action,Capcom,0.01,0.03,0.06
+5758,12676,GC,2003,Action,Capcom,0.03,0.01,0.05
+3436,13227,PC,2003,Racing,Electronic Arts,0,0.03,0.04
+629,13734,PC,2003,Action,Take-Two Interactive,0,0.02,0.03
+4399,13886,PC,2003,Shooter,Microsoft Game Studios,0.01,0.02,0.03
+4702,15784,PC,2007,Shooter,Microsoft Game Studios,0,0.01,0.02
+1012,16096,PC,2002,Action,Take-Two Interactive,0,0.01,0.01

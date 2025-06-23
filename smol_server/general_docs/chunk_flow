@@ -1,0 +1,21 @@
+    +-------------------------+
+    |   loop until no chunks |
+    +-------------------------+
+             |
+             v
+   Agent reads chunk of 200 rows
+             |
+             v
+   Agent reasons & cleans it
+             |
+             v
+   Agent calls `document_learning_insights(notes=...)`
+             |
+             v
+   Tool:
+     - Logs markdown + JSON
+     - Auto-embeds
+     - Increments global chunk counter
+             |
+             v
+     Agent can recall prior notes later using vector search

@@ -29,6 +29,7 @@ def get_db_connection():
 
 @tool
 def query_sales(platform: str = None):
+    import pandas as pd
     """
     Query sales data from the database.
 
@@ -48,20 +49,21 @@ def query_sales(platform: str = None):
         - Global_Sales (REAL): Global sales in millions
 
     Example input:
-    platform = "Wii"  # Returns only Wii platform sales
-    platform = None   # Returns all sales records
+    platform = "Wii" # Returns only the Wii platform sales
+    platform = None # Returns all sales records
     """
     engine = get_db_connection()
     with engine.connect() as conn:
         if platform:
-            result = conn.execute(text("SELECT * FROM tg_sales_table WHERE Platform = :platform"),
+            result = conn.execute(pd.read_sql_query("SELECT * FROM tg_sales_table WHERE Platform = :platform"),
                                 {"platform": platform})
         else:
-            result = conn.execute(text("SELECT * FROM tg_sales_table"))
+            result = conn.execute(pd.read_sql_query("SELECT * FROM tg_sales_table"))
         return result.fetchall()
 
 @tool
 def query_reviews(platform: str = None):
+    import pandas as pd
     """
     Query review data from the database.
 
@@ -83,14 +85,14 @@ def query_reviews(platform: str = None):
         - summary (TEXT): Review summary
 
     Example input:
-    platform = "PS4"  # Returns only PS4 platform reviews
-    platform = None   # Returns all review records
+    platform = "PS4" # Returns only PS4 platform reviews
+    platform = None # Returns all review records
     """
     engine = get_db_connection()
     with engine.connect() as conn:
         if platform:
-            result = conn.execute(text("SELECT * FROM tg_reviews_table WHERE Platform = :platform"),
+            result = conn.execute(pd.read_sql_query("SELECT * FROM tg_reviews_table WHERE Platform = :platform"),
                                 {"platform": platform})
         else:
-            result = conn.execute(text("SELECT * FROM tg_reviews_table"))
+            result = conn.execute(pd.read_sql_query("SELECT * FROM tg_reviews_table"))
         return result.fetchall()

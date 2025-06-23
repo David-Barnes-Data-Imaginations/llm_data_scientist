@@ -1,87 +1,137 @@
+import json
 from smolagents import tool
+from e2b_code_interpreter import Sandbox
+import pandas as pd
+
+import json
+from e2b import Sandbox  # Or your own sandbox class
+from your_embedding_module import embed_and_store  # Update path if needed
+
+@tool
+def document_learning_insights(notes: str, sandbox: Sandbox) -> str:
+    """
+    Logs the agent's insights from a data chunk, assigns a chunk number automatically,
+    and stores both the markdown and JSON summaries with embeddings.
+
+    Parameters:
+        notes (str): The agent's reflections on the current chunk.
+        sandbox (Sandbox): E2B sandbox instance.
+
+    Returns:
+        str: Confirmation message including the assigned chunk number.
+    """
+    index_path = "insights/chunk_index.txt"
+
+    # Read and increment chunk number
+    try:
+        current_index = int(sandbox.files.read(index_path).decode().strip())
+        chunk_number = current_index + 1
+    except:
+        chunk_number = 0  # First chunk
+
+    # Write .md and .json files
+    md_path = f"insights/chunk_{chunk_number}.md"
+    json_path = f"insights/chunk_{chunk_number}.json"
+
+    md_content = f"""## Analysis Insights - Chunk {chunk_number}
+
+### Agent Notes
+{notes}
+"""
+    json_content = {
+        "chunk": chunk_number,
+        "notes": notes
+    }
+
+    sandbox.files.write(md_path, md_content.encode())
+    sandbox.files.write(json_path, json.dumps(json_content, indent=2).encode())
+
+    # Store embedding
+    embed_and_store(notes, metadata={"chunk": chunk_number})
+
+    # Save updated index
+    sandbox.files.write(index_path, str(chunk_number).encode())
+
+    return f"Logged and embedded notes for chunk {chunk_number}."
+
+from openai import OpenAI  # Or your wrapper
+import faiss
+
+embedding_index = faiss.IndexFlatL2(1536)  # If using OpenAI's text-embedding-3-small
+metadata_store = []
+
+def embed_and_store(text: str, metadata: dict = None):
+    embedding = openai_client.embeddings.create(
+        input=[text],
+        model="text-embedding-3-small"
+    ).data[0].embedding
+
+    embedding_index.add(np.array([embedding]).astype("float32"))
+    metadata_store.append(metadata or {})
 
 
 @tool
-def document_learning_insights(chunk_number: int, patterns: dict, decisions: dict) -> str:
+def validate_cleaning_results(chunk_number: int, original_chunk: list[dict], cleaned_chunk: list[dict], sandbox: Sandbox) -> dict:
     """
-    Allows the LLM to document what it's learning about the data
-    and how it's adjusting its cleaning strategy based on new insights.
-
-    Parameters:
-    chunk_number (int): The current chunk number being processed
-    patterns (dict): Dictionary containing identified data patterns
-    decisions (dict): Dictionary containing decisions made based on patterns
+    Validates cleaning results for a chunk and writes markdown and JSON logs.
 
     Returns:
-    str: Documented insights and reasoning
+        dict: { "logical_issues": [...], "stat_summary": {...}, "suggested_fixes": [...] }#
 
-    Example patterns input:
-    {
-        'age_distribution': {'mean': 35, 'outliers': [150, -1]},
-        'spending_correlations': {'age_vs_spending': 0.45}
-    }
+    # Very simple rule-based example for checks
+    for row in cleaned_chunk:
+        if row.get("age", 0) < 0 or row.get("age", 0) > 120:
+            issues.append(row)
+
+    if issues:
+        suggestions.append("Review outliers in 'age'; some extreme values remain.")
+
     """
-    insights = []
+    issues = []
+    suggestions = []
 
-    # Let the LLM document its observations and reasoning
-    return "\n".join(insights)
+    summary = {
+        "logical_issues": issues,
+        "stat_summary": {
+            "original_count": len(original_chunk),
+            "cleaned_count": len(cleaned_chunk)
+        },
+        "suggested_fixes": suggestions
+    }
 
+    md = f"""## Validation Report - Chunk {chunk_number}
+
+### Logical Issues
+{json.dumps(issues, indent=2)}
+
+### Suggestions
+{json.dumps(suggestions, indent=2)}
+"""
+
+    sandbox.files.write(f"validation/chunk_{chunk_number}.md", md.encode())
+    sandbox.files.write(f"validation/chunk_{chunk_number}.json", json.dumps(summary, indent=2).encode())
+
+    return summary
 
 @tool
-def suggest_cleaning_strategy(patterns: dict) -> dict:
+def save_cleaned_dataframe(df: pd.DataFrame, filename: str = "tg_reviews_cleaned.csv", sandbox: Sandbox = None) -> str:
     """
-    Analyzes data patterns and proposes a data cleaning strategy.
+    Saves the cleaned DataFrame to a CSV in the sandbox.
 
     Parameters:
-    patterns (dict): Dictionary containing identified data patterns including:
-        - demographic_patterns: Age, gender, education distributions
-        - review_patterns: Text analysis results
-        - spending_patterns: Financial metric correlations
+        df (pd.DataFrame): The cleaned DataFrame
+        filename (str): File name for the CSV output
+        sandbox (Sandbox, optional): If present, will write into sandbox FS
 
     Returns:
-    dict: A strategy dictionary containing:
-        - proposed_actions: List of cleaning actions to take
-        - justification: List of reasons for each action
-
-    Example patterns input:
-    {
-        'age_distribution': {'mean': 35, 'outliers': [150, -1]},
-        'spending_correlations': {'age_vs_spending': 0.45}
-    }
+        str: Confirmation message
     """
-    suggestions = {
-        'proposed_actions': [],
-        'justification': []
-    }
+    csv_bytes = df.to_csv(index=False).encode()
 
-    return suggestions
-
-@tool
-def validate_cleaning_results(original_chunk: list[dict], cleaned_chunk: list[dict]) -> dict:
-    """
-    Validates the cleaning results and provides feedback
-    that the LLM can use to adjust its strategy.
-
-    Parameters:
-    original_chunk (list[dict]): The original data chunk before cleaning
-    cleaned_chunk (list[dict]): The data chunk after cleaning operations
-
-    Returns:
-    dict: Validation results and suggestions for improvement containing:
-        - statistical_validity: Statistical measures of the cleaning effectiveness
-        - logical_consistency: Assessment of data consistency after cleaning
-        - suggested_improvements: List of recommended improvements
-
-    Example original_chunk input:
-    [
-        {'age': 150, 'spending_score (1-100)': 85},
-        {'age': -1, 'spending_score (1-100)': 30}
-    ]
-    """
-    validation_results = {
-        'statistical_validity': {},
-        'logical_consistency': {},
-        'suggested_improvements': []
-    }
-
-    return validation_results
+    if sandbox:
+        sandbox.files.write(filename, csv_bytes)
+        return f"Saved cleaned DataFrame to sandbox file: {filename}"
+    else:
+        with open(filename, "wb") as f:
+            f.write(csv_bytes)
+        return f"Saved cleaned DataFrame locally: {filename}"

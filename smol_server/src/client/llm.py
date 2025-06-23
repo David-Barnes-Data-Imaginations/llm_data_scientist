@@ -1,21 +1,20 @@
-from llama_index.llms import HuggingFaceInference
-from llama_index.core import Settings
-import os
-from dotenv import load_dotenv
+from langchain.llms import Ollama
+from smolagents import LLMInterface
+from src.config import Settings
+# api_key = os.getenv("HF_API_TOKEN")
+class OllamaWrapper(LLMInterface):
+    """Wrapper to make Ollama work with CodeAgent"""
+    def __init__(self):
+        self.ollama = Ollama(
+            model=Settings.llm_config.model_name,
+            max_new_tokens=Settings.llm_config.max_tokens,
+            temperature=Settings.llm_config.temperature,
+        )
 
-load_dotenv()
+    async def generate(self, prompt: str) -> str:
+        """Generate response using Ollama"""
+        return await self.ollama.agenerate([prompt])
 
-def setup_llm():
+def setup_llm() -> OllamaWrapper:
     """Initialize and configure the LLM."""
-    api_token = os.getenv('HF_API_TOKEN')
-    if not api_token:
-        raise ValueError("HF_API_TOKEN environment variable is not set")
-    
-    llm = HuggingFaceInference(
-        model_name="Qwen2.5-Coder-32B-Q4_K_L.gguf",
-        token=api_token,
-        max_new_tokens=512,
-        temperature=0.7
-    )
-    Settings.llm = llm
-    return llm
+    return OllamaWrapper()

@@ -1,7 +1,7 @@
-
+from smolagents import tool
 
 # functions from my pip library to be turned into tools depending on which functions i choose:
-
+@tool
 def one_hot_encode(data, column=None):
     """
     One-hot encodes columns in a DataFrame or categories in a NumPy array.
@@ -22,7 +22,7 @@ def one_hot_encode(data, column=None):
     data = np.array(['A', 'B', 'A', 'C'])
     """
     from sklearn.preprocessing import OneHotEncoder
-    import pd as pd
+    import pandas as pd
     import numpy as np
 
     if isinstance(data, pd.DataFrame):
@@ -38,8 +38,7 @@ def one_hot_encode(data, column=None):
     else:
         raise ValueError("Input must be either a pandas DataFrame or a NumPy array.")
 
-
-# Helper function to save me having to type incorrectly
+@tool
 def split_data(X, y, test_size=0.30, random_state=1, stratify=None):
     """
     Splits dataset into training and testing subsets.
@@ -66,7 +65,7 @@ def split_data(X, y, test_size=0.30, random_state=1, stratify=None):
     from sklearn.model_selection import train_test_split
     return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=stratify)
 
-
+@tool
 def apply_feature_hashing(data, n_features=10):
     """
     Apply feature hashing to the input data.
@@ -84,7 +83,7 @@ def apply_feature_hashing(data, n_features=10):
     data = pd.DataFrame({'feature1': ['A', 'B', 'C'], 'feature2': [1, 2, 3]})
     n_features = 8
 
-    # For list of lists
+    # For a list of lists
     data = [['A', 1], ['B', 2], ['C', 3]]
     n_features = 8
     """
@@ -92,6 +91,7 @@ def apply_feature_hashing(data, n_features=10):
 
     # Convert data into a list of dictionaries
     # Works for both DataFrame and list of lists
+    import pandas as pd
     if isinstance(data, pd.DataFrame):
         data_dict = data.to_dict(orient="records")
     elif isinstance(data, list):
@@ -111,7 +111,7 @@ def apply_feature_hashing(data, n_features=10):
     # Return the sparse matrix result
     return hashed_features
 
-
+@tool
 # Validation for splitting helper functions
 def validate_split_data(X, y):
     """
@@ -136,7 +136,7 @@ def validate_split_data(X, y):
     if len(X) == 0:
         raise ValueError("X and y must not be empty.")
 
-
+@tool
 def smote_balance(X, y, test_size=0.3, random_state=42):
     """
     Applies SMOTE (Synthetic Minority Over-sampling Technique) to oversample imbalanced datasets.
@@ -156,7 +156,8 @@ def smote_balance(X, y, test_size=0.3, random_state=42):
 
     Example input:
     X = pd.DataFrame({'feature1': [1, 2, 3, 4, 5, 6], 'feature2': [7, 8, 9, 10, 11, 12]})
-    y = pd.Series([0, 0, 0, 0, 1, 1])  # Imbalanced classes (4 samples of class 0, 2 samples of class 1)
+    y = pd.Series([0, 0, 0, 0, 1, 1])
+    # Imbalanced classes (4 samples of class 0, 2 samples of class 1)
     """
     # Modular imports
     from imblearn.over_sampling import SMOTE
@@ -171,8 +172,100 @@ def smote_balance(X, y, test_size=0.3, random_state=42):
     X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
 
     # Convert outputs into pandas DataFrame if X is a DataFrame
+    import pandas as pd
     if isinstance(X, pd.DataFrame):
         X_resampled = pd.DataFrame(data=X_resampled, columns=X.columns)
         y_resampled = pd.Series(data=y_resampled, name=y.name if hasattr(y, "name") else "target")
 
     return X_resampled, y_resampled, X_test, y_test
+
+
+def calculate_sparsity(data: object) -> float:
+    """
+  ** Calculate and return the sparsity of the given 'data'.
+  **
+  ** Sparsity is defined as the proportion of elements that are zero.
+  **
+  ** Parameters:
+  ** data (np.ndarray): Input array (can be any shape).
+  **
+  ** Returns:
+  **    float: Sparsity as a proportion of zero elements (0 to 1).
+  **    """
+    import numpy as np
+    if isinstance(data, np.ndarray):
+        total_elements = data.size
+    if total_elements == 0:  # Prevent division by zero
+        return 0.0
+    num_zeros = np.count_nonzero(data == 0)
+    sparsity: float = num_zeros / total_elements
+    return sparsity
+
+@tool
+def handle_missing_values(df, method: object = 'linear', axis=0, fill_strategy=None, inplace=False):
+    """
+    Handle Missing Values in a pandas DataFrame using interpolation or various imputation strategies.
+
+1. **Supports Both Interpolation and Imputation:**
+    - If `fill_strategy` is provided, the function handles imputation (e.g., mean, median, mode).
+    - Otherwise, it defaults to interpolation using pandas' robust `interpolate()`.
+
+2. **Flexible Value Replacement:*
+    - Users can directly provide a scalar value for replacement instead of strategies.
+    - Example:
+    'df_copy = handle_missing_values(df_copy, fill_strategy=0)  # Replace NaNs with 0'
+3. **In-Place Modification:**
+    - It supports both in-place modification (`inplace=True`) and returning a copy (`inplace=False`).
+### **Usage Examples: **
+#### **Using Interpolation: **
+df_copy = handle_missing_values(df_copy, method='linear', axis=0)
+
+#### **Using Imputation with Mean: **
+df_copy = handle_missing_values(df_copy, fill_strategy='mean')
+
+#### **Replacing with a Scalar: **
+df_copy = handle_missing_values(df_copy, fill_strategy=0)
+# Replace NaNs with 0
+
+              ** Handle missing values in a pandas DataFrame using interpolation or various imputation strategies.
+              **
+              ** Parameters:
+              ** df_copy (pd.DataFrame): Input DataFrame containing data with missing values.
+              ** method (str): Interpolation method. Default is 'linear'. Options include:
+              ** 'linear', 'time', 'index', 'values', 'nearest', etc.
+              ** axis (int): Axis to interpolate along. Use 0 for rows and 1 for columns.
+              ** fill_strategy (str or None): Imputation strategy. If not None, this overrides interpolation. Options:
+              ** - 'mean': Replace missing values with column mean.
+              ** - 'median': Replace missing values with column median.
+              ** - 'mode': Replace missing values with column mode.
+              ** - Any scalar value to directly use as a replacement.
+              ** inplace (bool): If True, modifies the input DataFrame directly. Default is False.
+              **
+              ** Returns:
+              ** pd.DataFrame: A DataFrame with missing values handled (if `inplace=False`),
+              ** or None if modified in place.
+
+"""
+    if not inplace:
+        df = df.copy()  # Avoid modifying the original DataFrame
+
+    try:
+        if fill_strategy is not None:
+            # Handle imputation based on the provided strategy
+            if fill_strategy == 'mean':
+                df.fillna(df.mean(), inplace=True)
+            elif fill_strategy == 'median':
+                df.fillna(df.median(), inplace=True)
+            elif fill_strategy == 'mode':
+                for col in df.columns:
+                    df[col].fillna(df[col].mode()[0], inplace=True)
+            else:
+                # Assume fill_strategy is a scalar value
+                df.fillna(fill_strategy, inplace=True)
+        else:
+            # Use interpolation to handle missing values
+            df.interpolate(method=method, axis=axis, inplace=True)
+    except Exception as e:
+        raise ValueError(f"Error handling missing values: {e}")
+
+    return df

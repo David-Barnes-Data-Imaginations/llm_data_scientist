@@ -17,7 +17,7 @@ def analyze_data_patterns(chunk: list[dict], analysis_type: str) -> dict:
         - 'platform_specific': Platform-based patterns
 
     Returns:
-    dict: Analysis results with patterns found, including:
+    dict: Analysis results with patterns found, including
         - Statistical distributions
         - Correlations
         - Aggregated metrics by category
@@ -58,7 +58,7 @@ def analyze_data_patterns(chunk: list[dict], analysis_type: str) -> dict:
 
 
 @tool
-def run_check_dataframe(chunk: list[dict]) -> str:
+def check_dataframe(chunk: list[dict]) -> str:
     """
     Inspects a pandas DataFrame for any non-numeric, NaN, or infinite values.
 

@@ -33,7 +33,13 @@ modelling_project/
 │       └── __init__.py
 └── tools/                    # Custom tools directory
     └── database_tools.py
+---
+list = [get_db_connection, query_sales, query_reviews, check_dataframe,
+                             inspect_dataframe, analyze_data_patterns, document_learning_insights,
+                             embed_and_store, retrieve_similar_chunks, validate_cleaning_results, save_cleaned_dataframe,
+                             one_hot_encode, apply_feature_hashing, calculate_sparsity, handle_missing_values]
 
+---
 
 import pandas as pd
 from sqlalchemy import create_engine, text

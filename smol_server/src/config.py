@@ -1,5 +1,6 @@
 from pathlib import Path
 from dataclasses import dataclass
+from smolagents.local_python_executor import LocalPythonExecutor
 from openai import OpenAI
 from src.tools.analysis_tools import *
 
@@ -16,14 +17,17 @@ DEFAULT_MODEL = "Qwen2.5-Coder-32B.gguf"
 
 @dataclass
 class LLMConfig:
-    tools: list = [dget_db_connection, query_sales, query_reviews, check_dataframe,
-                             inspect_dataframe, analyze_data_patterns, document_learning_insights,
-                             embed_and_store, retrieve_similar_chunks, validate_cleaning_results, save_cleaned_dataframe,
-                             one_hot_encode, apply_feature_hashing, calculate_sparsity, handle_missing_values]
     model_name: str = "Qwen2.5-Coder-32B-Q4_K_L.gguf"
     max_tokens: int = 1024
     temperature: float = 0.2
-    system_prompt: str = 'SYSTEM_PROMPT'
+  #  system_prompt: str = 'SYSTEM_PROMPT'
+    add_base_tools: bool = True
+    prompt_templates: str = 'SYSTEM_PROMPT'
+    # Set up a custom executor
+    custom_executor = LocalPythonExecutor(
+        ['sqlalchemy', 'random', 'sklearn', 'statistics', 'pandas',
+         'itertools', 'queue', 'math'],
+    )
 
 class Settings:
     llm_config = LLMConfig()

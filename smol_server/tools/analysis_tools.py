@@ -1,11 +1,16 @@
-import json
 from smolagents import tool
 from e2b_code_interpreter import Sandbox
 import pandas as pd
-
 import json
 from e2b import Sandbox  # Or your own sandbox class
-from your_embedding_module import embed_and_store  # Update path if needed
+from openai import OpenAI
+import faiss
+import numpy as np
+import os
+embedding_index = faiss.IndexFlatL2(1536)  # Using OpenAI's text-embedding-3-small
+metadata_store = []
+openai_client = OpenAI()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 @tool
 def document_learning_insights(notes: str, sandbox: Sandbox) -> str:
@@ -54,13 +59,8 @@ def document_learning_insights(notes: str, sandbox: Sandbox) -> str:
 
     return f"Logged and embedded notes for chunk {chunk_number}."
 
-from openai import OpenAI  # Or your wrapper
-import faiss
-
-embedding_index = faiss.IndexFlatL2(1536)  # If using OpenAI's text-embedding-3-small
-metadata_store = []
-
-def embed_and_store(text: str, metadata: dict = None):
+@tool
+def embed_and_store(text: str, metadata: dict = None, sandbox: Sandbox):
     embedding = openai_client.embeddings.create(
         input=[text],
         model="text-embedding-3-small"
@@ -69,6 +69,57 @@ def embed_and_store(text: str, metadata: dict = None):
     embedding_index.add(np.array([embedding]).astype("float32"))
     metadata_store.append(metadata or {})
 
+    sandbox.files.write(
+        f"embeddings/chunk_{metadata['chunk']}.json",
+        json.dumps({
+            "embedding": embedding,
+            "metadata": metadata
+        }, indent=2).encode()
+    )
+
+
+@tool
+def retrieve_similar_chunks(query: str, top_k: int = 3, sandbox: Sandbox) -> list:
+    """
+    Retrieves the most similar past notes based on semantic similarity.
+
+    Parameters:
+        sandbox:
+        query (str): The query or current goal the agent is working on.
+        top_k (int): Number of top similar chunks to return.
+
+    Returns:
+        list of dict: Each item contains { "chunk": int, "notes": str }
+    """
+    # Embed the query
+    query_embed = openai_client.embeddings.create(
+        input=[query],
+        model="text-embedding-3-small"
+    ).data[0].embedding
+
+    query_vector = np.array([query_embed]).astype("float32")
+
+    # Search in FAISS
+    distances, indices = embedding_index.search(query_vector, top_k)
+
+    results = []
+    for idx in indices[0]:
+        if idx < len(metadata_store):
+            chunk_info = metadata_store[idx]
+            chunk_num = chunk_info.get("chunk", idx)
+            md_path = f"insights/chunk_{chunk_num}.md"
+
+            try:
+                notes = sandbox.files.read(md_path).decode()
+            except:
+                notes = "(Could not read notes.)"
+
+            results.append({
+                "chunk": chunk_num,
+                "notes": notes.strip()
+            })
+
+    return results
 
 @tool
 def validate_cleaning_results(chunk_number: int, original_chunk: list[dict], cleaned_chunk: list[dict], sandbox: Sandbox) -> dict:

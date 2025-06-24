@@ -39,33 +39,6 @@ def one_hot_encode(data, column=None):
         raise ValueError("Input must be either a pandas DataFrame or a NumPy array.")
 
 @tool
-def split_data(X, y, test_size=0.30, random_state=1, stratify=None):
-    """
-    Splits dataset into training and testing subsets.
-
-    Parameters:
-    X (array-like or DataFrame): Input features.
-    y (array-like or Series): Target values.
-    test_size (float): Proportion of the dataset to include in the test split.
-    random_state (int): Random seed for reproducibility.
-    stratify (array-like, optional): If not None, stratifies splits according to class distribution.
-
-    Returns:
-    tuple: (X_train, X_test, y_train, y_test) containing:
-        - X_train: Training features
-        - X_test: Testing features
-        - y_train: Training target values
-        - y_test: Testing target values
-
-    Example input:
-    X = pd.DataFrame({'feature1': [1, 2, 3, 4], 'feature2': [5, 6, 7, 8]})
-    y = pd.Series([0, 1, 0, 1])
-    test_size = 0.25
-    """
-    from sklearn.model_selection import train_test_split
-    return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=stratify)
-
-@tool
 def apply_feature_hashing(data, n_features=10):
     """
     Apply feature hashing to the input data.
@@ -111,30 +84,6 @@ def apply_feature_hashing(data, n_features=10):
     # Return the sparse matrix result
     return hashed_features
 
-@tool
-# Validation for splitting helper functions
-def validate_split_data(X, y):
-    """
-    Helper function to validate inputs for splitting data.
-
-    Parameters:
-    X (array-like or DataFrame): Input features.
-    y (array-like or Series): Target values.
-
-    Returns:
-    None: Function raises ValueError if validation fails, otherwise returns None.
-
-    Raises:
-    ValueError: If X and y have incompatible shapes or invalid inputs.
-
-    Example input:
-    X = pd.DataFrame({'feature1': [1, 2, 3], 'feature2': [4, 5, 6]})
-    y = pd.Series([0, 1, 0])
-    """
-    if len(X) != len(y):
-        raise ValueError("X and y must have the same length.")
-    if len(X) == 0:
-        raise ValueError("X and y must not be empty.")
 
 @tool
 def smote_balance(X, y, test_size=0.3, random_state=42):

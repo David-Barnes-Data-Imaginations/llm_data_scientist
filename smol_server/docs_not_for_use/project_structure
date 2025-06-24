@@ -15,6 +15,26 @@ smol_server/
 └── tools/                    # Custom tools directory
     └── database_tools.py
 --
+
+modelling_project/
+├── main.py                    # Main entry point and server
+
+├── src/
+│   ├── __init__.py
+│   ├── config.py             # Configuration settings
+│   ├── client/
+│   │   ├── ui/
+│   │   ├── __init__.py      # Client package exports
+│   │   ├── agent.py         # Agent implementations
+│   │   ├── llm.py           # LLM setup and configuration
+│   │   └── mcp_client.py    # MCP client implementation
+│   ├── data/                 # Data storage directory
+│   └── utils/                # Utility functions
+│       └── __init__.py
+└── tools/                    # Custom tools directory
+    └── database_tools.py
+
+
 import pandas as pd
 from sqlalchemy import create_engine, text
 from smolagents import tool

@@ -1,0 +1,16 @@
+    e2b-code-interpreter
+    mcp
+    faiss-gpu
+    sse-starlette
+    langfuse
+    langchain-community
+    openinference-instrumentation-smolagents
+    opentelemetry-exporter-otlp
+    opentelemetry-sdk
+    smolagents[e2b,telemetry,toolkit, dev]
+    sqlalchemy
+    opentelemetry-sdk
+    opentelemetry-exporter-otlp
+    openinference-instrumentation-smolagents
+    gradio
+    ipywidgets

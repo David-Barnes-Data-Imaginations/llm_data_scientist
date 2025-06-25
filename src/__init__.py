@@ -1,5 +1,8 @@
 """
-Main source package for the project.
+Main source package for the data scientist project.
+
+This package contains modules for client interactions, utility functions,
+and data handling operations.
 """
 
 # Import main modules

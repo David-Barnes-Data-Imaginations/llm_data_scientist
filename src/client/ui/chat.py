@@ -1,12 +1,10 @@
 # src/client/ui/chat.py
 import gradio as gr
 from langchain_core.chat_sessions import ChatSession
-from sympy import false
 
 from src.client.telemetry import log_user_feedback
-from src.client.agent import CodeAgent
-import shutil
-from pathlib import Path
+# from src.client.agent import CodeAgent
+from src.client.agent import ToolCallingAgent
 from typing import Generator
 
 
@@ -26,6 +24,27 @@ def get_step_footnote_content(step_log: ActionStep | PlanningStep, step_name: st
     step_footnote += f" | Duration: {round(float(step_log.timing.duration), 2)}s" if step_log.timing.duration else ""
     step_footnote_content = f"""<span style="color: #bbbbc2; font-size: 12px;">{step_footnote}</span> """
     return step_footnote_content
+
+
+def _format_code_content(content: str) -> str:
+    """
+    Format code content as Python code block if it's not already formatted.
+
+    Args:
+        content (`str`): Code content to format.
+
+    Returns:
+        `str`: Code content formatted as a Python code block.
+    """
+    content = content.strip()
+    # Remove existing code blocks and end_code tags
+    content = re.sub(r"```.*?\n", "", content)
+    content = re.sub(r"\s*<end_code>\s*", "", content)
+    content = content.strip()
+    # Add Python code block formatting if not already present
+    if not content.startswith("```python"):
+        content = f"```python\n{content}\n```"
+    return content
 
 
 def _clean_model_output(model_output: str) -> str:
@@ -109,16 +128,6 @@ def _process_action_step(step_log: ActionStep, skip_model_outputs: bool = False)
                 metadata={"title": "📝 Execution Logs", "status": "done"},
             )
 
-    # Display any images in observations
-    if getattr(step_log, "observations_images", []):
-        for image in step_log.observations_images:
-            path_image = AgentImage(image).to_string()
-            yield gr.ChatMessage(
-                role="assistant",
-                content={"path": path_image, "mime_type": f"image/{path_image.split('.')[-1]}"},
-                metadata={"title": "🖼️ Output Image", "status": "done"},
-            )
-
     # Handle errors
     if getattr(step_log, "error", None):
         yield gr.ChatMessage(
@@ -187,18 +196,6 @@ def _process_final_answer_step(step_log: FinalAnswerStep) -> Generator:
         yield gr.ChatMessage(
             role="assistant",
             content=f"**Final answer:**\n{final_answer.to_string()}\n",
-            metadata={"status": "done"},
-        )
-    elif isinstance(final_answer, AgentImage):
-        yield gr.ChatMessage(
-            role="assistant",
-            content={"path": final_answer.to_string(), "mime_type": "image/png"},
-            metadata={"status": "done"},
-        )
-    elif isinstance(final_answer, AgentAudio):
-        yield gr.ChatMessage(
-            role="assistant",
-            content={"path": final_answer.to_string(), "mime_type": "audio/wav"},
             metadata={"status": "done"},
         )
     else:
@@ -273,8 +270,9 @@ class GradioUI:
     """
     Gradio interface for interacting with a [`MultiStepAgent`].
 
-    This class provides a web interface to interact with the agent in real-time, allowing users to submit prompts, upload files, and receive responses in a chat-like format.
-    It  can reset the agent's memory at the start of each interaction if desired.
+    This class provides a web interface to interact with the agent in real-time, allowing users to submit prompts,
+    upload files, and receive responses in a chat-like format.
+    It can reset the agent's memory at the start of each interaction if desired.
     It supports file uploads, which are saved to a specified folder.
     It uses the [`gradio.Chatbot`] component to display the conversation history.
     This class requires the `gradio` extra to be installed: `smolagents[gradio]`.
@@ -298,7 +296,8 @@ class GradioUI:
         ```
     """
 
-    def __init__(self, agent: CodeAgent, reset_agent_memory: bool = False):
+ #    def __init__(self, agent: CodeAgent, reset_agent_memory: bool = False):
+    def __init__(self, agent: ToolCallingAgent, reset_agent_memory: bool = False):
         if not _is_package_available("gradio"):
             raise ModuleNotFoundError(
                 "Please install 'gradio' extra to use the GradioUI: `pip install 'smolagents[gradio]'`"
@@ -383,10 +382,7 @@ class GradioUI:
             chatbot = gr.Chatbot(
                 label="Agent",
                 type="messages",
-                avatar_images=(
-                    None,
-                    "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/smolagents/mascot_smol.png",
-                ),
+
                 resizeable=True,
                 scale=1,
                 latex_delimiters=[

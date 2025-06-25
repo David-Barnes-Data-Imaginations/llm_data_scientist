@@ -1,9 +1,17 @@
+"""
+Utilities module for the data scientist project.
+
+This module provides various utility functions for working with data files,
+database operations, and system prompts.
+"""
+
 from .prompts import SYSTEM_PROMPT
 from .create_db_tables import create_table_from_parquet
 from .file_reader import read_csv_summary, read_parquet_summary
 from .generate_parquet import convert_to_parquet
 
-# Import parquet_to_sqlite function using importlib
+# Import parquet_to_sqlite function using importlib to handle the space in filename
+# Note: Consider renaming the file to remove the space for better maintainability
 import importlib
 parquet_to_sqlite_module = importlib.import_module("src.utils.parquet _to_sqlite")
 parquet_to_sqlite = parquet_to_sqlite_module.parquet_to_sqlite

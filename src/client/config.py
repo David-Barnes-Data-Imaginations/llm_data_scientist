@@ -10,7 +10,9 @@ ROOT_DIR = Path(__file__).parent.parent
 # Server configuration
 SERVER_HOST = "127.0.0.1"
 SERVER_PORT = 8005
-SERVER_ENDPOINT = f"https://{SERVER_HOST}:{SERVER_PORT}/sse"
+SERVER_ENDPOINT = f"https://{SERVER_HOST}:{SERVER_PORT}/stdio"
+
+templates = {SYSTEM_PROMPT: SYSTEM_PROMPT, MAIN_PROMPT: MAIN_PROMPT, CHAT_PROMPT: CHAT_PROMPT}
 
 # Model configuration
 DEFAULT_MODEL = "Qwen2.5-Coder-32B.gguf"
@@ -51,7 +53,7 @@ class LLMConfig:
     temperature: float = 0.2
     top_p: float = 0.8
     top_k: int = 20
-    prompt_templates: str = SYSTEM_PROMPT    # or system_prompt: str = 'SYSTEM_PROMPT'
+    prompt_templates: dict = templates,
     add_base_tools: bool = True
     executor_type="e2b" # The custom executor for E2B
     max_steps=30 # arbitrary until I see it run

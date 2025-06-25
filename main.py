@@ -1,54 +1,52 @@
 import asyncio
 from fastapi import FastAPI, Request
+from gradio import ChatInterface
 from sse_starlette.sse import EventSourceResponse
 from e2b_code_interpreter import Sandbox
-from smolagents.local_python_executor import LocalPythonExecutor
+from src.client.agent import ToolCallingAgent, CustomAgent  # Import your custom agent
+
+# from smolagents.local_python_executor import LocalPythonExecutor  # Used for CodeAgent
 from typing import AsyncGenerator
-
-from src.client import CodeAgent
-from src.client.ui.chat import ChatInterface
 from src.client.mcp_client import create_mcp_client, list_tools
-
 # Initialize FastAPI
 app = FastAPI()
 
 # Global variables for component access
 sandbox = None
-agent = CodeAgent
+agent = None
 chat_interface = None
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize all components on startup"""
     global sandbox, agent, chat_interface
-    
+
     # Initialize sandbox
     sandbox = Sandbox()
-    
+
     # Upload dataset to sandbox
     with open("./src/data/tg_database.db", "rb") as f:
-        dataset_path_in_sandbox=sandbox.files.write("/data/tg_database.db", f)
-        # Upload dataset to sandbox
-    with (open(".src/data/metadata/turtle_games_dataset_metadata.md", "rb") as f):
-        metadata_path_in_sandbox=sandbox.files.write("/data/metadata/turtle_games_dataset_metadata.md", f)
+        dataset_path_in_sandbox = sandbox.files.write("/data/tg_database.db", f)
+    with open("./src/data/metadata/turtle_games_dataset_metadata.md", "rb") as f:
+        metadata_path_in_sandbox = sandbox.files.write("/data/metadata/turtle_games_dataset_metadata.md", f)
 
     # Install required packages in sandbox
     sandbox.commands.run("pip install smolagents")
-    
-    # Set up a custom executor
-    custom_executor = LocalPythonExecutor(
-        ['sqlalchemy', 'random', 'sklearn', 'statistics', 'pandas',
-         'itertools', 'queue', 'math'],
-        max_print_outputs_length=1024
-    )
-    
-    # Initialize MCP components
+
+    # Initialize MCP components and create agent
     mcp_client, mcp_tools = await create_mcp_client()
     await list_tools(mcp_tools)
-    
-    # Initialize agent
-    agent = await create_agent(mcp_tools)
-    
+
+    agent = CustomAgent(
+        tools=mcp_tools,
+        add_base_tools=True
+    )
+
+
+    # Initialize chat interface
+    chat_interface = ChatInterface(agent)
+
+
     # Initialize chat interface
     chat_interface = ChatInterface(agent)
     try:

@@ -1,7 +1,6 @@
-from langchain_community.llms import VLLM
 from smolagents import ToolCallingAgent as BaseAgent
 from docs_for_reference.smolagents_lib__tools.agents import ToolCallingAgent
-from src.config import Settings
+from src.client.config import Settings
 # api_key = os.getenv("HF_API_TOKEN")
 
 # The LLM config file separator for the smolagents configuration settings
@@ -17,6 +16,8 @@ class VLLMWrapper(BaseAgent):
             max_completion_tokens=Settings.llm_config.max_completion_tokenss,
             temperature=Settings.llm_config.temperature,
             top_p=Settings.llm_config.top_p,
+            top_k=Settings.llm_config.top_k,
+            system_prompt=Settings.llm_config.system_prompt,
             planning_interval=Settings.llm_config.planning_interval,
             add_base_tools=Settings.llm_config.add_base_tools,
             executor_type=Settings.llm_config.custom_executor,

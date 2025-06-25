@@ -1,4 +1,3 @@
-# src/client/telemetry.py
 from opentelemetry import trace
 from langfuse import Langfuse
 from opentelemetry.trace import format_trace_id

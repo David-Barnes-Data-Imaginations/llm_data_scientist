@@ -1,33 +1,30 @@
-from smolagents import MCPClient, CodeAgent
+from smolagents import ToolCollection
 from mcp import StdioServerParameters
 import os
-from src.config import SERVER_ENDPOINT
+from src.client.config import SERVER_ENDPOINT
 
-def create_mcp_client(endpoint: str = SERVER_ENDPOINT):
-    """Create and initialize the MCP client."""
-    mcp_client = BasicMCPClient(endpoint)
-    mcp_tools = McpToolSpec(client=mcp_client)
-    return mcp_client, mcp_tools
-
-async def list_tools(mcp_tools: McpToolSpec):
-    """List all available tools."""
-    tools = await mcp_tools.to_tool_list_async()
-    for tool in tools:
-        print(tool.metadata.name, tool.metadata.description)
-    return tools
-
-async def shutdown():
-    mcp_client.disconnect()
-
-# ******* To change or adapt *****
-
-# the CodeAgents MCP from hugging face documentation
+# Server parameters for MCP
 server_parameters = StdioServerParameters(
     command="uvx",  # Using uvx ensures dependencies are available
-    args=["--quiet", "server_name"],
+    args=["--quiet", "your_actual_server_name"],  # Replace with actual server name
     env={"UV_PYTHON": "3.13", **os.environ},
 )
 
-with MCPClient(server_parameters) as tools:
-    agent = CodeAgent(tools=mcp_client.get_tools(), model=model, add_base_tools=True)
+async def create_mcp_client(endpoint: str = SERVER_ENDPOINT):
+    """Create and initialize the MCP client using smolagents ToolCollection."""
+    
+    # Use smolagents ToolCollection.from_mcp - this is the correct way
+    tool_collection = ToolCollection.from_mcp(
+        server_parameters, 
+        trust_remote_code=True  # Set based on your security requirements
+    )
+    
+    return tool_collection, tool_collection.tools
 
+async def list_tools(tools):
+    """List all available tools."""
+    for tool in tools:
+        print(f"Tool: {tool.name} - {getattr(tool, 'description', 'No description')}")
+    return tools
+
+# Remove the old BasicMCPClient functions since you're using smolagents now

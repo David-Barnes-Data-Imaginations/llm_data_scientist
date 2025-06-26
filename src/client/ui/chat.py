@@ -1,19 +1,16 @@
 # src/client/ui/chat.py
 import gradio as gr
 from langchain_core.chat_sessions import ChatSession
-
-from src.client.telemetry import log_user_feedback
-# from src.client.agent import CodeAgent
-from src.client.agent import ToolCallingAgent
 from typing import Generator
 
-
 from smolagents.agent_types import AgentAudio, AgentImage, AgentText
-from smolagents.agents import MultiStepAgent, PlanningStep
+from smolagents.agents import MultiStepAgent, PlanningStep, ToolCallingAgent
 from smolagents.memory import ActionStep, FinalAnswerStep
 from smolagents.models import ChatMessageStreamDelta, agglomerate_stream_deltas
 from smolagents.utils import _is_package_available
 import re
+
+from src.utils.prompts import CHAT_PROMPT, TCA_SYSTEM_PROMPT
 
 
 def get_step_footnote_content(step_log: ActionStep | PlanningStep, step_name: str) -> str:
@@ -24,7 +21,6 @@ def get_step_footnote_content(step_log: ActionStep | PlanningStep, step_name: st
     step_footnote += f" | Duration: {round(float(step_log.timing.duration), 2)}s" if step_log.timing.duration else ""
     step_footnote_content = f"""<span style="color: #bbbbc2; font-size: 12px;">{step_footnote}</span> """
     return step_footnote_content
-
 
 def _format_code_content(content: str) -> str:
     """
@@ -256,7 +252,6 @@ def stream_to_gradio(
             text = agglomerate_stream_deltas(accumulated_events).render_as_markdown()
             yield text
 
-
 # merge in with main gradio ui to fix
 """
 class ChatInterface:
@@ -314,11 +309,11 @@ class GradioUI:
             session_state["agent"] = self.agent
 
         try:
-            messages.append(gr.ChatMessage(role="user", content=prompt, metadata={"status": "done"}))
+            messages.append(gr.ChatMessage(role="user", content=CHAT_PROMPT, metadata={"status": "done"}))
             yield messages
 
             for msg in stream_to_gradio(
-                    session_state["agent"], task=prompt, reset_agent_memory=self.reset_agent_memory
+                    session_state["agent"], task=TCA_SYSTEM_PROMPT, reset_agent_memory=self.reset_agent_memory
             ):
                 if isinstance(msg, gr.ChatMessage):
                     messages[-1].metadata["status"] = "done"

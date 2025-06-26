@@ -1,8 +1,7 @@
 from smolagents import tool
-from e2b_code_interpreter import Sandbox
 import pandas as pd
 import json
-from e2b import Sandbox  # Or your own sandbox class
+from e2b import Sandbox # Can replace with docker sandbox class
 from openai import OpenAI
 import faiss
 import numpy as np

@@ -1,19 +1,25 @@
-from src.client.telemetry import TelemetryManager
-# from smolagents import CodeAgent as BaseCodeAgent
-from smolagents import ToolCallingAgent
-from src.utils.prompts import TCA_MAIN_PROMPT, TCA_SYSTEM_PROMPT, CHAT_PROMPT
 
-# class CodeAgent(BaseCodeAgent):
+from smolagents import ToolCallingAgent as BaseAgent
+from src.client.config import Settings
+from smolagents import ToolCallingAgent as BaseAgent
 
-class CustomAgent(ToolCallingAgent):  # Renamed to avoid confusion
-    def __init__(self, tools, model, *args, **kwargs):
+"""Initialize the Agent with the specified model parameters"""
+class CustomAgent(BaseAgent):
         super().__init__(
-            tools=tools,
-            model=model,
-            *args,
-            **kwargs
+                #   tools=Settings.llm_config.tools,  #
+                model=Settings.model_name,
+                max_completion_tokens=Settings.max_completion_tokens,
+                temperature=Settings.temperature,
+                top_p=Settings.top_p,
+                top_k=Settings.top_k,
+                system_prompt=Settings.system_prompt,
+                planning_interval=Settings.planning_interval,
+                add_base_tools=Settings.add_base_tools,
+                executor_type=Settings.custom_executor,
+#               additional_authorized_imports=Settings.additional_authorized_imports,
+                verbosity_level=Settings.verbosity_level,
+                stream_outputs=Settings.stream_outputs
         )
-        self.telemetry = TelemetryManager()
 
 
 

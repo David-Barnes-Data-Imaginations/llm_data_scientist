@@ -1,15 +1,18 @@
-import asyncio
+import asyncio, os
 from fastapi import FastAPI, Request
 from gradio import ChatInterface
 from sse_starlette.sse import EventSourceResponse
 from e2b_code_interpreter import Sandbox
-from src.client.agent import ToolCallingAgent, CustomAgent  # Import your custom agent
-
-# from smolagents.local_python_executor import LocalPythonExecutor  # Used for CodeAgent
+from src.client.agent import CustomAgent  # Import your custom agent
+from src.client.telemetry import TelemetryManager
+# from smolagents.local_python_executor import LocalPythonExecutor # Used for CodeAgent
 from typing import AsyncGenerator
 from src.client.mcp_client import create_mcp_client, list_tools
+
 # Initialize FastAPI
 app = FastAPI()
+
+HF_TOKEN: os.getenv('HF_TOKEN')
 
 # Global variables for component access
 sandbox = None
@@ -24,7 +27,7 @@ async def startup_event():
     # Initialize sandbox
     sandbox = Sandbox()
 
-    # Upload dataset to sandbox
+# Upload dataset to sandbox
     with open("./src/data/tg_database.db", "rb") as f:
         dataset_path_in_sandbox = sandbox.files.write("/data/tg_database.db", f)
     with open("./src/data/metadata/turtle_games_dataset_metadata.md", "rb") as f:
@@ -37,15 +40,12 @@ async def startup_event():
     mcp_client, mcp_tools = await create_mcp_client()
     await list_tools(mcp_tools)
 
-    agent = CustomAgent(
-        tools=mcp_tools,
-        add_base_tools=True
-    )
-
+    agent = CustomAgent()
+    agent.telemetry = TelemetryManager()
+    # Run the agent code in the sandbox
 
     # Initialize chat interface
     chat_interface = ChatInterface(agent)
-
 
     # Initialize chat interface
     chat_interface = ChatInterface(agent)
@@ -56,8 +56,8 @@ async def startup_event():
         # logger.error(f"Failed to initialize application: {e}")
         raise
 
-@app.get("/sse")
-async def sse_endpoint(request: Request) -> EventSourceResponse:
+@app.get("/stdio")
+async def stdio_endpoint(request: Request) -> EventSourceResponse:
     """Server-Sent Events endpoint"""
     async def event_generator() -> AsyncGenerator[str, None]:
         while True:
@@ -78,7 +78,7 @@ async def launch_chat():
 def run_server():
     """Run the FastAPI server"""
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8080)
 
 @app.on_event("shutdown")
 async def shutdown_event():

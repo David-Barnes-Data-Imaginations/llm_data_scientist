@@ -1,0 +1,6 @@
+1. Initialization
+  - Log into Langfuse
+  - Run VLLM
+```
+vllm serve 'models/Qwen/Qwen2.5-Coder-32B.gguf
+```

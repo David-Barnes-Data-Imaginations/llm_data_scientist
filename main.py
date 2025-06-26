@@ -3,11 +3,17 @@ from fastapi import FastAPI, Request
 from gradio import ChatInterface
 from sse_starlette.sse import EventSourceResponse
 from e2b_code_interpreter import Sandbox
-from src.client.agent import CustomAgent  # Import your custom agent
+from src.client.agent import CustomAgent
 from src.client.telemetry import TelemetryManager
 # from smolagents.local_python_executor import LocalPythonExecutor # Used for CodeAgent
 from typing import AsyncGenerator
-from src.client.mcp_client import create_mcp_client, list_tools
+
+# Retain for potential future MCP use
+# from src.client.mcp_client import create_mcp_client, list_tools
+
+# for none MCP required runs
+from src.client.mcp_client import create_local_tools, list_tools
+
 
 # Initialize FastAPI
 app = FastAPI()
@@ -36,9 +42,14 @@ async def startup_event():
     # Install required packages in sandbox
     sandbox.commands.run("pip install smolagents")
 
-    # Initialize MCP components and create agent
-    mcp_client, mcp_tools = await create_mcp_client()
-    await list_tools(mcp_tools)
+    # When using MCP, Initialize MCP components and create agent
+    # mcp_client, mcp_tools = await create_mcp_client()
+    # await list_tools(mcp_tools)
+
+    # For none MCP runs
+     _, local_tools = await create_local_tools()
+    await list_tools(local_tools)
+
 
     agent = CustomAgent()
     agent.telemetry = TelemetryManager()

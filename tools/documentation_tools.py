@@ -1,3 +1,4 @@
+from ray.llm._internal.serve.config_generator.utils import gpu
 from smolagents import tool
 import pandas as pd
 import json
@@ -9,7 +10,7 @@ import os
 embedding_index = faiss.IndexFlatL2(1536)  # Using OpenAI's text-embedding-3-small
 metadata_store = []
 openai_client = OpenAI()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # for embeddings
 
 """
  The 'MultiStepAgent' tool class for the functions used by the agent. Subclass this and implement the `forward` method as well as the
@@ -30,15 +31,22 @@ following class attributes:
 You can also override the method [`~Tool.setup`] if your tool has an expensive operation to perform before being
 usable (such as loading a model). [`~Tool.setup`] will be called the first time you use your tool, but not at
 instantiation.
+
+{%- for tool in tools.values() %}
+- {{ tool.name }}: {{ tool.description }}
+Takes inputs: {{tool.inputs}}
+Returns an output of type: {{tool.output_type}}
+{%- endfor %}
 """
 
-@tool
-def document_learning_insights(notes: str, sandbox: Sandbox) -> str:
+# @tool
+class document_learning_insights(str, Sandbox)
+    name="document_learning_insights"
+    description = "Logs the agent's insights from a data chunk, assigns a chunk number automatically, and stores both the markdown and JSON summaries with embeddings."
+    inputs: {str, Sandbox}
+    output_type: str = str
     """
-    Logs the agent's insights from a data chunk, assigns a chunk number automatically,
-    and stores both the markdown and JSON summaries with embeddings.
-
-    Parameters:
+    
         notes (str): The agent's reflections on the current chunk.
         sandbox (Sandbox): E2B sandbox instance.
 
@@ -79,8 +87,8 @@ def document_learning_insights(notes: str, sandbox: Sandbox) -> str:
 
     return f"Logged and embedded notes for chunk {chunk_number}."
 
-@tool
-def embed_and_store(text: str, metadata: dict = None, sandbox: Sandbox):
+# @tool
+class embed_and_store(text: str, metadata: dict = None, sandbox: Sandbox):
     embedding = openai_client.embeddings.create(
         input=[text],
         model="text-embedding-3-small"

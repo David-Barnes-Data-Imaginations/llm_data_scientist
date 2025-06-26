@@ -9,9 +9,12 @@ and data handling operations.
 from . import client
 from . import utils
 from . import data
-
+from . import tools
 __all__ = [
     'client',
     'utils',
-    'data'
+    'data',
+    'tools'
 ]
+
+

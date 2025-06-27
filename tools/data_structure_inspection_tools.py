@@ -9,14 +9,21 @@ from src.data.validate_schema import DataValidator
 # tool under consideration as it is possibly less accurate than normal analysis
 # Possibly ask llm to create 2 DF's and use both methods
 class ValidateData(Tool):
-    name = "ValidateData"
+    name = "validate_data"
     description = "Validates data against a specified schema and returns a cleaned DataFrame."
+    inputs = {
+        "chunk": {"type": "object", "description": "DataFrame to validate"},
+        "valid_rows": {"type": "list", "description": "List to store valid rows", "optional": True},
+        "errors": {"type": "list", "description": "List to store validation errors", "optional": True}
+    }
+    output_type = "tuple"  # Returns tuple of DataFrame and errors
+
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-    valid_rows = []
-    errors = []
-    cleaning_stats = {}
+        self.valid_rows = []
+        self.errors = []
+        self.cleaning_stats = {}
 
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
         initial_rows = len(df)
@@ -58,8 +65,13 @@ class ValidateData(Tool):
 
 
 class AnalyzePatterns(Tool):
-    name = "AnalyzePatterns"
+    name = "analyze_patterns"
     description = "Analyzes specific patterns in the data chunk based on the specified analysis type."
+    inputs = {
+        "chunk": {"type": "list", "description": "List of dictionaries containing the data"},
+        "analysis_type": {"type": "string", "description": "Type of analysis to perform (demographic, review_sentiment, spending_patterns, platform_specific)"}
+    }
+    output_type = "dict"  # Returns dictionary of analysis results
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -117,8 +129,12 @@ class AnalyzePatterns(Tool):
 
 
 class CheckDataframe(Tool):
-    name = "CheckDataframe"
+    name = "check_dataframe"
     description = "Inspects a pandas DataFrame for any non-numeric, NaN, or infinite values."
+    inputs = {
+        "chunk": {"type": "list", "description": "List of dictionaries to be converted to DataFrame and checked"}
+    }
+    output_type = "string"  # Returns success message or raises ValueError
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -159,8 +175,12 @@ class CheckDataframe(Tool):
         return "DataFrame validation passed successfully"
 
 class InspectDataframe(Tool):
-    name = "InspectDataframe"
+    name = "inspect_dataframe"
     description = "Inspects and provides a comprehensive overview of a pandas DataFrame."
+    inputs = {
+        "df": {"type": "object", "description": "The DataFrame to inspect and analyze"}
+    }
+    output_type = "object"  # Returns DataFrame with descriptive statistics
 
     def __init__(self, sandbox=None):
         super().__init__()

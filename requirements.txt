@@ -1,6 +1,8 @@
     e2b-code-interpreter
 e2b~=1.5.2
 mcp~=1.9.4
+vllm>=0.2.7
+requests
 sse-starlette~=2.3.6
 langfuse~=3.0.5
 langchain-community~=0.3.26

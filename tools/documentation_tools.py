@@ -12,6 +12,8 @@ from main import sandbox
 embedding_index = faiss.IndexFlatL2(1536)  # Using OpenAI's text-embedding-3-small
 metadata_store = []
 metadata_store_path = "embeddings/metadata_store.json"
+agent_notes_index_path = "embeddings/agent_notes_index.faiss"
+agent_notes_store_path = "embeddings/agent_notes_store.json"
 openai_client = OpenAI()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # for embeddings
 
@@ -79,9 +81,6 @@ class RetrieveMetadata(Tool):
             response += f"{result['content']}\n\n"
 
         return response
-    pass
-
-
 
 class DocumentLearningInsights(Tool):
     name = "document_learning_insights"
@@ -136,7 +135,6 @@ class DocumentLearningInsights(Tool):
         self.sandbox.files.write(index_path, str(chunk_number).encode())
 
         return f"Logged and embedded notes for chunk {chunk_number}."
-    pass
 
 class EmbedAndStore(Tool):
     name = "embed_and_store"
@@ -208,26 +206,31 @@ class EmbedAndStore(Tool):
 
         except Exception as e:
             return f"Error embedding notes: {e}"
-        pass
 
 class RetrieveSimilarChunks(Tool):
-    name = "RetrieveSimilarChunks"
+    name = "retrieve_similar_chunks"
     description = "Retrieves the most similar past notes based on semantic similarity."
-    def __init__(self, sandbox=None, query: str = None, top_k: int = 3, metadata: dict = None):
+    inputs = {
+        "query": {"type": "string", "description": "The query or current goal the agent is working on"},
+        "top_k": {"type": "integer", "description": "Number of top similar chunks to return", "optional": True}
+    }
+    output_type = "list"  # Returns list of dictionaries
+
+    def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
 
-        def forward(self, query: str, top_k: int = 3) -> list:
-            """
-            Args:
-                query (str): The query or current goal the agent is working on.
-                top_k (int): Number of top similar chunks to return.
+    def forward(self, query: str, top_k: int = 3) -> list:
+        """
+        Args:
+            query (str): The query or current goal the agent is working on.
+            top_k (int): Number of top similar chunks to return.
 
-            Returns:
-                list of dict: Each item contains { "chunk": int, "notes": str }
-            """
-            if not self.sandbox:
-                return "Error: Sandbox not available"
+        Returns:
+            list of dict: Each item contains { "chunk": int, "notes": str }
+        """
+        if not self.sandbox:
+            return "Error: Sandbox not available"
 
         # Embed the query
         query_embed = openai_client.embeddings.create(
@@ -260,8 +263,14 @@ class RetrieveSimilarChunks(Tool):
         return results
 
 class ValidateCleaningResults(Tool):
-    name = "ValidateCleaningResults"
+    name = "validate_cleaning_results"
     description = "Validates cleaning results for a chunk and writes markdown and JSON logs."
+    inputs = {
+        "chunk_number": {"type": "integer", "description": "The chunk number being validated"},
+        "original_chunk": {"type": "list", "description": "The original data chunk"},
+        "cleaned_chunk": {"type": "list", "description": "The cleaned data chunk"}
+    }
+    output_type = "dict"  # Returns dictionary with validation results
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -314,9 +323,14 @@ class ValidateCleaningResults(Tool):
 
         return summary
 
-class save_cleaned_dataframe(Tool):
+class SaveCleanedDataframe(Tool):
     name = "save_cleaned_dataframe"
     description = "Saves the cleaned DataFrame to a CSV in the sandbox."
+    inputs = {
+        "df": {"type": "object", "description": "The cleaned DataFrame"},
+        "filename": {"type": "string", "description": "File name for the CSV output", "optional": True}
+    }
+    output_type = "string"  # Returns confirmation message
 
     def __init__(self, sandbox=None):
         super().__init__()

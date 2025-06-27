@@ -1,14 +1,13 @@
 from opentelemetry import trace
 import os, base64
 from langfuse import Langfuse
-from opentelemetry.trace import format_trace_id
 from opentelemetry.sdk.trace import TracerProvider
 from openinference.instrumentation.smolagents import SmolagentsInstrumentor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
-LANGFUSE_PUBLIC_KEY: os.getenv('LANGFUSE_PUBLIC_KEY')
-LANGFUSE_SECRET_KEY: os.getenv('LANGFUSE_SECRET_KEY')
+LANGFUSE_PUBLIC_KEY= os.getenv('LANGFUSE_PUBLIC_KEY')
+LANGFUSE_SECRET_KEY= os.getenv('LANGFUSE_SECRET_KEY')
 LANGFUSE_AUTH=base64.b64encode(f"{LANGFUSE_PUBLIC_KEY}:{LANGFUSE_SECRET_KEY}".encode()).decode()
 
 os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "https://cloud.langfuse.com/api/public/otel" # EU data region

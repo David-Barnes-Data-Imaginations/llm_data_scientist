@@ -10,11 +10,11 @@ class OneHotEncode(Tool):
     }
     output_type = "object"  # Returns DataFrame or np.ndarray
 
-def __init__(self, sandbox=None):
-    super().__init__()
-    self.sandbox = sandbox
+    def __init__(self, sandbox=None):
+        super().__init__()
+        self.sandbox = sandbox
 
-def forward(self, data, column=None):
+    def forward(self, data, column=None):
 
         """
         Args:
@@ -53,6 +53,11 @@ def forward(self, data, column=None):
 class ApplyFeatureHashing(Tool):
     name = "apply_feature_hashing"
     description = "Apply feature hashing to the input data."
+    inputs = {
+        "data": {"type": "object", "description": "An iterable object such as a list of lists, or a pandas DataFrame/Series"},
+        "n_features": {"type": "integer", "description": "Number of output features (columns) for the hash space", "optional": True}
+    }
+    output_type = "object"  # Returns scipy.sparse.csr_matrix
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -105,6 +110,13 @@ class ApplyFeatureHashing(Tool):
 class SmoteBalance(Tool):
     name = "smote_balance"
     description = "Applies SMOTE (Synthetic Minority Over-sampling Technique) to oversample imbalanced datasets."
+    inputs = {
+        "X": {"type": "object", "description": "Input features (DataFrame or array-like)"},
+        "y": {"type": "object", "description": "Target values (Series or array-like)"},
+        "test_size": {"type": "float", "description": "Proportion of the dataset for testing", "optional": True},
+        "random_state": {"type": "integer", "description": "Random seed for reproducibility", "optional": True}
+    }
+    output_type = "tuple"  # Returns tuple of balanced datasets
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -151,9 +163,13 @@ class SmoteBalance(Tool):
         return X_resampled, y_resampled, X_test, y_test
 
 
-def CalculateSparsity(Tool) -> float:
-    name = "CalculateSparsity"
-    description = "Applies SMOTE (Synthetic Minority Over-sampling Technique) to oversample imbalanced datasets."
+class CalculateSparsity(Tool):
+    name = "calculate_sparsity"
+    description = "Calculate the sparsity of the given data (proportion of elements that are zero)."
+    inputs = {
+        "data": {"type": "object", "description": "Input array (can be any shape)"}
+    }
+    output_type = "float"
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -161,24 +177,25 @@ def CalculateSparsity(Tool) -> float:
 
     def forward(self, data: object) -> float:
         """
-  ** Calculate and return the sparsity of the given 'data'.
-  **
-  ** Sparsity is defined as the proportion of elements that are zero.
-  **
-  ** Parameters:
-  ** data (np.ndarray): Input array (can be any shape).
-  **
-  ** Returns:
-  **    float: Sparsity as a proportion of zero elements (0 to 1).
-  **    """
-    import numpy as np
-    if isinstance(data, np.ndarray):
-        total_elements = data.size
-    if total_elements == 0:  # Prevent division by zero
+        Calculate and return the sparsity of the given 'data'.
+
+        Sparsity is defined as the proportion of elements that are zero.
+
+        Args:
+            data (np.ndarray): Input array (can be any shape).
+
+        Returns:
+            float: Sparsity as a proportion of zero elements (0 to 1).
+        """
+        import numpy as np
+        if isinstance(data, np.ndarray):
+            total_elements = data.size
+            if total_elements == 0:  # Prevent division by zero
+                return 0.0
+            num_zeros = np.count_nonzero(data == 0)
+            sparsity = num_zeros / total_elements
+            return sparsity
         return 0.0
-    num_zeros = np.count_nonzero(data == 0)
-    sparsity: float = num_zeros / total_elements
-    return sparsity
 
 class HandleMissingValues(Tool):
     name = "HandleMissingValues"
@@ -247,4 +264,3 @@ class HandleMissingValues(Tool):
             raise ValueError(f"Error handling missing values: {e}")
 
         return df
-    pass

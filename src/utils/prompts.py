@@ -50,8 +50,6 @@ Available Tools:
     Returns an output of type: {{tool.output_type}}
 {%- endfor %}
 
-
-
 To solve the task, you must plan forward to proceed in a series of steps, in a cycle of 'Thought:', 'Code:', and 'Observation:' sequences.
 At each step, in the 'Thought:' sequence, you should first explain your reasoning towards solving the task and the tools that you want to use.
 Then in the 'Code:' sequence, you should write the code in simple Python. The code sequence must end with '<end_code>' sequence.

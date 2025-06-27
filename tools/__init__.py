@@ -10,15 +10,15 @@ from .data_structure_inspection_tools import analyze_data_patterns, check_datafr
 
 # Import from data_structure_feature_engineering_tools.py
 from .data_structure_feature_engineering_tools import (
-    one_hot_encode, 
-    apply_feature_hashing, 
-    smote_balance, 
-    handle_missing_values,
-    calculate_sparsity
+    OneHotEncode,
+    ApplyFeatureHashing,
+    SmoteBalance,
+    HandleMissingValues,
+    CalculateSparsity
 )
 
 # Import from database_tools.py
-from .database_tools import get_db_connection, query_sales, query_reviews
+from .database_tools import DatabaseConnect, QuerySales,
 
 # Import from documentation_tools.py
 from .documentation_tools import (
@@ -31,12 +31,12 @@ from .documentation_tools import (
 
 __all__ = [
     # Data structure inspection tools
-    'analyze_data_patterns',
-    'check_dataframe',
-    'inspect_dataframe',
+    'AnalyzePatterns',
+    'CheckDataframe',
+    'InspectDataframe',
     
     # Data structure feature engineering tools
-    'one_hot_encode',
+    'OneHotoEncode',
     'apply_feature_hashing',
     'smote_balance',
     'handle_missing_values',

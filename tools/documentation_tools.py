@@ -7,7 +7,6 @@ from openai import OpenAI
 import faiss
 import numpy as np
 import os
-
 from main import sandbox
 
 embedding_index = faiss.IndexFlatL2(1536)  # Using OpenAI's text-embedding-3-small
@@ -44,7 +43,7 @@ Returns an output of type: {{tool.output_type}}
 """
 
 class RetrieveMetadata(Tool):
-    name = "retrieve_metadata"
+    name = "RetrieveMetadata"
     description = "Search the dataset metadata for relevant information"
 
     def __init__(self, sandbox=None, metadata_embedder=None):
@@ -78,7 +77,7 @@ class RetrieveMetadata(Tool):
 
 
 class DocumentLearningInsights(Tool):
-    name = "document_learning_insights"
+    name = "DocumentLearningInsights"
     description = "Logs the agent's insights from a data chunk, assigns a chunk number automatically, and stores both the markdown and JSON summaries with embeddings."
     def __init__(self, sandbox=None):
         super().__init__()
@@ -126,9 +125,8 @@ class DocumentLearningInsights(Tool):
 
         return f"Logged and embedded notes for chunk {chunk_number}."
 
-
 class EmbedAndStore(Tool):
-    name = "embed_and_store"
+    name = "EmbedAndStore"
     description = "Embeds agent notes and stores them separately from metadata"
 
     def __init__(self, sandbox=None):
@@ -197,8 +195,6 @@ class EmbedAndStore(Tool):
 
         except Exception as e:
             return f"Error embedding notes: {e}"
-
-
 
 class RetrieveSimilarChunks(Tool):
     name = "RetrieveSimilarChunks"

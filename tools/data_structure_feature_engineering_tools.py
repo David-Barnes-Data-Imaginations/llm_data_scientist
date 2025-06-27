@@ -1,7 +1,7 @@
 from smolagents import Tool
 
 # functions from my pip library to be turned into tools depending on which functions i choose:
-class one_hot_encode(Tool):
+class OneHotEncode(Tool):
     name = "one_hot_encode"
     description = "One-hot encodes columns in a DataFrame or categories in a NumPy array."
 
@@ -43,7 +43,7 @@ class one_hot_encode(Tool):
         else:
             raise ValueError("Input must be either a pandas DataFrame or a NumPy array.")
 
-class apply_feature_hashing(Tool):
+class ApplyFeatureHashing(Tool):
     name = "apply_feature_hashing"
     description = "Apply feature hashing to the input data."
 
@@ -95,7 +95,7 @@ class apply_feature_hashing(Tool):
         return hashed_features
 
 
-class smote_balance(Tool):
+class SmoteBalance(Tool):
     name = "smote_balance"
     description = "Applies SMOTE (Synthetic Minority Over-sampling Technique) to oversample imbalanced datasets."
 
@@ -144,8 +144,16 @@ class smote_balance(Tool):
         return X_resampled, y_resampled, X_test, y_test
 
 
-def calculate_sparsity(data: object) -> float:
-    """
+def CalculateSparsity(Tool) -> float:
+    name = "CalculateSparsity"
+    description = "Applies SMOTE (Synthetic Minority Over-sampling Technique) to oversample imbalanced datasets."
+
+    def __init__(self, sandbox=None):
+        super().__init__()
+        self.sandbox = sandbox
+
+    def forward(self, data: object) -> float:
+        """
   ** Calculate and return the sparsity of the given 'data'.
   **
   ** Sparsity is defined as the proportion of elements that are zero.
@@ -165,7 +173,7 @@ def calculate_sparsity(data: object) -> float:
     sparsity: float = num_zeros / total_elements
     return sparsity
 
-class handle_missing_values(Tool):
+class HandleMissingValues(Tool):
     name = "handle_missing_values"
     description = "Handle Missing Values in a pandas DataFrame using interpolation or various imputation strategies."
 

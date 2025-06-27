@@ -58,39 +58,48 @@ class ToolFactory:
         def __init__(self, sandbox):
                 self.sandbox = sandbox
 
-        def create_all_tools(self) -> List[Tool]:
+            def create_all_tools(self) -> List[Tool]:
 
-        # Import your custom tools
-        from tools.data_structure_inspection_tools import inspect_dataframe, check_dataframe, analyze_data_patterns
-        from tools.database_tools import get_db_connection, query_sales, query_reviews
-        from tools.documentation_tools import (document_learning_insights, embed_and_store, retrieve_similar_chunks,
-                                               validate_cleaning_results, save_cleaned_dataframe)
-        from tools.data_structure_feature_engineering_tools import (one_hot_encode, apply_feature_hashing,
-                                                                    calculate_sparsity, handle_missing_values)
+            # Import your custom tools
+            from tools.data_structure_inspection_tools import inspect_dataframe, check_dataframe, analyze_data_patterns
+            from tools.database_tools import DatabaseConnect, QuerySales, QueryReviews
+            from tools.documentation_tools import (DocumentLearningInsights, EmbedAndStore, RetrieveSimilarChunks,
+                                                   ValidateCleaningResults, RetrieveMetadata)
+            from tools.data_structure_feature_engineering_tools import (OneHotEncode, ApplyFeatureHashing,
+                                                                       CalculateSparsity, HandleMissingValues)
+            from tools.dataframe_tools import (DataframeConcat, DataframeDrop, DataframeMerge,
+                                               DataframeFill, DataframeMelt, DataframeToNumeric)
 
-        # Create instances of your custom tools
-            return [
-                get_db_connection(sandbox=self.sandbox),
-                query_sales(sandbox=self.sandbox),
-                query_reviews(sandbox=self.sandbox),
-                check_dataframe(sandbox=self.sandbox),
+            # Create instances of your custom tools
+            all_tools =[
+                DatabaseConnect(sandbox=self.sandbox),
+                QuerySales(sandbox=self.sandbox),
+                QueryReviews(sandbox=self.sandbox),
                 inspect_dataframe(sandbox=self.sandbox),
+                check_dataframe(sandbox=self.sandbox),
                 analyze_data_patterns(sandbox=self.sandbox),
-                document_learning_insights(sandbox=self.sandbox),
-                embed_and_store(sandbox=self.sandbox),
-                retrieve_similar_chunks(sandbox=self.sandbox),
-                validate_cleaning_results(sandbox=self.sandbox),
-                save_cleaned_dataframe(sandbox=self.sandbox),
-                one_hot_encode(sandbox=self.sandbox),
-                apply_feature_hashing(sandbox=self.sandbox),
-                calculate_sparsity(sandbox=self.sandbox),
-                handle_missing_values(sandbox=self.sandbox)
+                DocumentLearningInsights(sandbox=self.sandbox),
+                EmbedAndStore(sandbox=self.sandbox),
+                RetrieveSimilarChunks(sandbox=self.sandbox),
+                ValidateCleaningResults(sandbox=self.sandbox),
+                RetrieveMetadata(sandbox=self.sandbox),
+                OneHotEncode(sandbox=self.sandbox),
+                ApplyFeatureHashing(sandbox=self.sandbox),
+                CalculateSparsity(sandbox=self.sandbox),
+                HandleMissingValues(sandbox=self.sandbox),
+                DataframeConcat(sandbox=self.sandbox),
+                DataframeDrop(sandbox=self.sandbox),
+                DataframeMerge(sandbox=self.sandbox),
+                DataframeFill(sandbox=self.sandbox),
+                DataframeMelt(sandbox=self.sandbox),
+                DataframeToNumeric(sandbox=self.sandbox)
             ]
+            return all_tools
 
-        # Optionally add HF Hub tools
-        # hf_tools = [
-        #     load_tool("huggingface-tools/text-classification"),
-        # ]
+            # Optionally add HF Hub tools
+            # hf_tools = [
+            #     load_tool("huggingface-tools/text-classification"),
+            # ]
 
 
 async def list_tools(tools):

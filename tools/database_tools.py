@@ -6,7 +6,7 @@ class DatabaseConnect(Tool):
     name = "DatabaseConnect"
     description = "Get a database connection for executing queries."
 
-    def __init__(self, sandbox=None):
+    def __init__(self, sandbox: object = None) -> None:
         super().__init__()
         self.sandbox = sandbox
 
@@ -59,7 +59,7 @@ class QuerySales(Tool):
         platform = None # Returns all sales records
         """
         import pandas as pd
-        engine = get_db_connection()
+        engine = DatabaseConnect()
         with engine.connect() as conn:
             if platform:
                 result = conn.execute(pd.read_sql_query("SELECT * FROM tg_sales_table WHERE Platform = :platform"),
@@ -100,7 +100,7 @@ class QueryReviews(Tool):
         platform = None # Returns all review records
         """
         import pandas as pd
-        engine = get_db_connection()
+        engine = DatabaseConnect()
         with engine.connect() as conn:
             if platform:
                 result = conn.execute(pd.read_sql_query("SELECT * FROM tg_reviews_table WHERE Platform = :platform"),

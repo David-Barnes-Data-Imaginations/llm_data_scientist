@@ -40,3 +40,4 @@ openai~=1.92.2
 transformers~=4.53.0
 nest-asyncio~=1.6.0
 torch~=2.7.0+cu128
+pydantic_core~=2.33.2

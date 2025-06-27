@@ -1,0 +1,171 @@
+import os
+import json
+import numpy as np
+from openai import OpenAI
+import faiss
+from pathlib import Path
+
+class MetadataEmbedder:
+    """Class for embedding metadata and storing them in a sandbox"""
+    def __init__(self, sandbox=None):
+        self.sandbox = sandbox
+        self.openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+        # Separate storage for metadata vs agent notes
+        self.metadata_index_path = "embeddings/metadata_index.faiss"
+        self.metadata_store_path = "embeddings/metadata_store.json"
+        self.agent_notes_index_path = "embeddings/agent_notes_index.faiss"
+        self.agent_notes_store_path = "embeddings/agent_notes_store.json"
+
+        # Initialize indexes
+        self.metadata_index = None
+        self.metadata_store = []
+        self.agent_notes_index = None
+        self.agent_notes_store = []
+
+    def _check_metadata_exists(self) -> bool:
+        """Check if metadata embeddings already exist in sandbox"""
+        if not self.sandbox:
+            return False
+
+        try:
+            # Check if both metadata files exist
+            self.sandbox.files.read(self.metadata_index_path)
+            self.sandbox.files.read(self.metadata_store_path)
+            return True
+        except:
+            return False
+
+    def _load_existing_metadata(self):
+        """Load existing metadata embeddings"""
+        try:
+            # Load metadata index
+            index_data = self.sandbox.files.read(self.metadata_index_path)
+            self.metadata_index = faiss.deserialize_index(np.frombuffer(index_data, dtype=np.uint8))
+
+            # Load metadata store
+            store_data = self.sandbox.files.read(self.metadata_store_path).decode()
+            self.metadata_store = json.loads(store_data)
+
+            print(f"Loaded existing metadata embeddings: {len(self.metadata_store)} items")
+            return True
+        except Exception as e:
+            print(f"Error loading metadata embeddings: {e}")
+            return False
+
+    def embed_metadata_file(self, file_path: str, force_refresh: bool = False) -> str:
+        """Embed the metadata markdown file at startup"""
+
+        # Check if already exists and not forcing refresh
+        if not force_refresh and self._check_metadata_exists():
+            print("Metadata embeddings already exist, loading...")
+            if self._load_existing_metadata():
+                return "Metadata embeddings loaded successfully"
+
+        print("Creating new metadata embeddings...")
+
+        # Read the metadata file from sandbox
+        try:
+            metadata_content = self.sandbox.files.read(file_path).decode()
+        except Exception as e:
+            return f"Error reading metadata file: {e}"
+
+        # Split into chunks to make the file easier for the llm to read
+        chunks = self._chunk_markdown(metadata_content)
+
+        # Create embeddings
+        embeddings = []
+        for i, chunk in enumerate(chunks):
+            try:
+                response = self.openai_client.embeddings.create(
+                    input=chunk,
+                    model="text-embedding-3-small"
+                )
+                embedding = response.data[0].embedding
+                embeddings.append(embedding)
+
+                # Store metadata about this chunk
+                self.metadata_store.append({
+                    "type": "metadata",
+                    "source": "turtle_games_dataset_metadata.md",
+                    "chunk_id": i,
+                    "content": chunk,
+                    "created_at": "startup"
+                })
+            except Exception as e:
+                print(f"Error creating embedding for chunk {i}: {e}")
+                continue
+
+        if not embeddings:
+            return "Error: No embeddings created"
+
+        # Create FAISS index
+        dimension = len(embeddings[0])
+        self.metadata_index = faiss.IndexFlatIP(dimension)  # Inner product for similarity
+        self.metadata_index.add(np.array(embeddings).astype('float32'))
+
+        # Save to sandbox
+        try:
+            # Save index
+            index_bytes = faiss.serialize_index(self.metadata_index).tobytes()
+            self.sandbox.files.write(self.metadata_index_path, index_bytes)
+
+            # Save metadata store
+            store_json = json.dumps(self.metadata_store, indent=2)
+            self.sandbox.files.write(self.metadata_store_path, store_json.encode())
+
+            return f"Successfully embedded metadata file: {len(chunks)} chunks created"
+
+        except Exception as e:
+            return f"Error saving metadata embeddings: {e}"
+
+    def _chunk_markdown(self, content: str, chunk_size: int = 1000) -> list:
+        """Split markdown content into chunks"""
+        # Simple chunking by lines - you might want more sophisticated chunking
+        lines = content.split('\n')
+        chunks = []
+        current_chunk = []
+        current_size = 0
+
+        for line in lines:
+            if current_size + len(line) > chunk_size and current_chunk:
+                chunks.append('\n'.join(current_chunk))
+                current_chunk = [line]
+                current_size = len(line)
+            else:
+                current_chunk.append(line)
+                current_size += len(line)
+
+        if current_chunk:
+            chunks.append('\n'.join(current_chunk))
+
+        return chunks
+
+    def search_metadata(self, query: str, k: int = 3) -> list:
+        """Search metadata embeddings"""
+        if not self.metadata_index or not self.metadata_store:
+            return []
+
+        try:
+            # Create query embedding
+            response = self.openai_client.embeddings.create(
+                input=query,
+                model="text-embedding-3-small"
+            )
+            query_embedding = np.array([response.data[0].embedding]).astype('float32')
+
+            # Search
+            scores, indices = self.metadata_index.search(query_embedding, k)
+
+            results = []
+            for i, idx in enumerate(indices[0]):
+                if idx < len(self.metadata_store):
+                    result = self.metadata_store[idx].copy()
+                    result['similarity_score'] = float(scores[0][i])
+                    results.append(result)
+
+            return results
+
+        except Exception as e:
+            print(f"Error searching metadata: {e}")
+            return []

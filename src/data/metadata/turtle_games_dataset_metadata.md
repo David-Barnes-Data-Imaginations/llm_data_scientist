@@ -14,21 +14,21 @@ This document contains metadata for the combined Turtle Games dataset, consistin
 ### Description
 Customer review and demographic data from Turtle Games' web platform.
 
-### Schema
+### Validation Schema
 
-| Column | Data Type | Sample Value | Description |
-|--------|-----------|--------------|-------------|
-| `gender` | string | "male", "female" | Customer gender |
-| `age` | integer | 25 | Customer age in years |
-| `remuneration` | float | 45.5 | Annual customer income in thousands of pounds (k£) |
-| `spending_score` | integer (1-100) | 67 | Turtle Games proprietary spending behavior score |
-| `loyalty_points` | integer | 1250 | Points based on purchase value and customer actions |
-| `education` | string | "graduate" | Education level: Diploma, Graduate, Postgraduate, PhD |
-| `language` | string | "EN" | Review language (all English) |
-| `platform` | string | "Web" | Review collection platform (all Web) |
-| `product` | integer | 12345 | Unique product identifier |
-| `review` | text | "When it comes to a DM's screen..." | Full customer review text |
-| `summary` | text | "The fact that 50% of this..." | Review summary |
+| Column | Valid Data Type | Sample Value                        | Description |
+|--------|-----------------|-------------------------------------|-------------|
+| `gender` | string          | "male", "female"                    | Customer gender |
+| `age` | integer         | integer (10-100)                    | Customer age in years |
+| `remuneration` | float           | 45.5                                | Annual customer income in thousands of pounds (k£) |
+| `spending_score` | integer (1-100) | 67                                  | Turtle Games proprietary spending behavior score |
+| `loyalty_points` | integer         | 1250                                | Points based on purchase value and customer actions |
+| `education` | string          | "graduate"                          | Education level: Diploma, Graduate, Postgraduate, PhD |
+| `language` | string          | "EN"                                | Review language (all English) |
+| `platform` | string          | "Web"                               | Review collection platform (all Web) |
+| `product` | integer         | 12345                               | Unique product identifier |
+| `review` | text            | "When it comes to a DM's screen..." | Full customer review text |
+| `summary` | text            | "The fact that 50% of this..."      | Review summary |
 
 ### Data Quality Notes
 - All reviews collected from Turtle Games website

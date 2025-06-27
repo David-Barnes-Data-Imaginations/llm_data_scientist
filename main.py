@@ -3,10 +3,12 @@ from fastapi import FastAPI, Request
 from gradio import ChatInterface
 from sse_starlette.sse import EventSourceResponse
 from e2b_code_interpreter import Sandbox
-from src.client.agent import CustomAgent
+from src.client.agent import CustomAgent, ToolFactory
 from src.client.telemetry import TelemetryManager
-# from smolagents.local_python_executor import LocalPythonExecutor # Used for CodeAgent
+from src.utils.metadata_embedder import MetadataEmbedder
+# from src.client.mcp_client import create_all_tools, list_tools
 from typing import AsyncGenerator
+
 
 # Retain for potential future MCP use
 # from src.client.mcp_client import create_mcp_client, list_tools
@@ -24,6 +26,7 @@ HF_TOKEN: os.getenv('HF_TOKEN')
 sandbox = None
 agent = None
 chat_interface = None
+metadata_embedder = None
 
 @app.on_event("startup")
 async def startup_event():
@@ -41,6 +44,10 @@ async def startup_event():
 
     # Install required packages in sandbox
     sandbox.commands.run("pip install smolagents")
+
+    # Create tool factory and tools
+    tool_factory = ToolFactory(sandbox)
+    tools = tool_factory.create_all_tools()
 
     # When using MCP, Initialize MCP components and create agent
     # mcp_client, mcp_tools = await create_mcp_client()

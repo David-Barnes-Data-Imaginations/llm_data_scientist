@@ -1,5 +1,7 @@
 from smolagents import load_tool
 from smolagents import ToolCallingAgent
+from typing import List
+from smolagents import Tool
 
 from src.utils import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
 
@@ -52,8 +54,11 @@ agent = ToolCallingAgent(
                 # additional_authorized_imports=['sqlalchemy', 'random', 'sklearn', 'statistics', 'pandas', 'itertools', 'queue', 'math']
                 )
 
-async def create_local_tools():
-        """Create local tools for data science work."""
+class ToolFactory:
+        def __init__(self, sandbox):
+                self.sandbox = sandbox
+
+        def create_all_tools(self) -> List[Tool]:
 
         # Import your custom tools
         from tools.data_structure_inspection_tools import inspect_dataframe, check_dataframe, analyze_data_patterns
@@ -64,32 +69,29 @@ async def create_local_tools():
                                                                     calculate_sparsity, handle_missing_values)
 
         # Create instances of your custom tools
-        local_tools = [
-                get_db_connection(),
-                query_sales(),
-                query_reviews(),
-                check_dataframe(),
-                inspect_dataframe(),
-                analyze_data_patterns(),
-                document_learning_insights(),
-                embed_and_store(),
-                retrieve_similar_chunks(),
-                validate_cleaning_results(),
-                save_cleaned_dataframe(),
-                one_hot_encode(),
-                apply_feature_hashing(),
-                calculate_sparsity(),
-                handle_missing_values()],
+            return [
+                get_db_connection(sandbox=self.sandbox),
+                query_sales(sandbox=self.sandbox),
+                query_reviews(sandbox=self.sandbox),
+                check_dataframe(sandbox=self.sandbox),
+                inspect_dataframe(sandbox=self.sandbox),
+                analyze_data_patterns(sandbox=self.sandbox),
+                document_learning_insights(sandbox=self.sandbox),
+                embed_and_store(sandbox=self.sandbox),
+                retrieve_similar_chunks(sandbox=self.sandbox),
+                validate_cleaning_results(sandbox=self.sandbox),
+                save_cleaned_dataframe(sandbox=self.sandbox),
+                one_hot_encode(sandbox=self.sandbox),
+                apply_feature_hashing(sandbox=self.sandbox),
+                calculate_sparsity(sandbox=self.sandbox),
+                handle_missing_values(sandbox=self.sandbox)
+            ]
 
         # Optionally add HF Hub tools
         # hf_tools = [
         #     load_tool("huggingface-tools/text-classification"),
         # ]
 
-        # Combine all tools
-        all_tools = local_tools  # + hf_tools if you want HF tools
-
-        return None, all_tools
 
 async def list_tools(tools):
         """List all available tools."""

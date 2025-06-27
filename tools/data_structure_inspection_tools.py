@@ -9,7 +9,7 @@ from src.data.validate_schema import DataValidator
 # tool under consideration as it is possibly less accurate than normal analysis
 # Possibly ask llm to create 2 DF's and use both methods
 class ValidateData(Tool):
-    name = "validate_data"
+    name = "ValidateData"
     description = "Validates data against a specified schema and returns a cleaned DataFrame."
     def __init__(self, sandbox=None):
         super().__init__()
@@ -58,7 +58,7 @@ class ValidateData(Tool):
 
 
 class AnalyzePatterns(Tool):
-    name = "analyze_data_patterns"
+    name = "AnalyzePatterns"
     description = "Analyzes specific patterns in the data chunk based on the specified analysis type."
 
     def __init__(self, sandbox=None):
@@ -117,7 +117,7 @@ class AnalyzePatterns(Tool):
 
 
 class CheckDataframe(Tool):
-    name = "check_dataframe"
+    name = "CheckDataframe"
     description = "Inspects a pandas DataFrame for any non-numeric, NaN, or infinite values."
 
     def __init__(self, sandbox=None):
@@ -158,8 +158,8 @@ class CheckDataframe(Tool):
 
         return "DataFrame validation passed successfully"
 
-class inspect_dataframe(Tool):
-    name = "inspect_dataframe"
+class InspectDataframe(Tool):
+    name = "InspectDataframe"
     description = "Inspects and provides a comprehensive overview of a pandas DataFrame."
 
     def __init__(self, sandbox=None):

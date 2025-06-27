@@ -15,11 +15,6 @@ templates = {TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT}
 
 @dataclass
 class LLMConfig:
-
-    tools = [get_db_connection(), query_sales(), query_reviews(), check_dataframe(),
-                     inspect_dataframe(), analyze_data_patterns(), document_learning_insights(),
-                     embed_and_store(), retrieve_similar_chunks(), validate_cleaning_results(), save_cleaned_dataframe(),
-                     one_hot_encode(), apply_feature_hashing(), calculate_sparsity(), handle_missing_values()]
     model_name: str = "Qwen2.5-Coder-32B.gguf",
     max_completion_tokens: int = 8192,
     temperature: float = 0.2

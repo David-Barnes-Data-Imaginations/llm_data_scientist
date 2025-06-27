@@ -4,14 +4,17 @@ from sqlalchemy import create_engine, text
 
 class DatabaseConnect(Tool):
     name = "DatabaseConnect"
-    description = "Get a database connection for executing queries."
+    description = "Establish database connection to the turtle games database"
+    inputs = {}  # No inputs required
+    output_type = "string"
 
-    def __init__(self, sandbox: object = None) -> None:
-        super().__init__()
-        self.sandbox = sandbox
+def __init__(self, sandbox=None):
+    super().__init__()
+    self.sandbox = sandbox
 
-    def forward(self):
-        """
+def forward(self) -> str:
+
+    """
         Returns:
             sqlalchemy.engine.Engine: A SQLAlchemy engine object connected to the database.
 

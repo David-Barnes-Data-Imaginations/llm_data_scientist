@@ -31,7 +31,7 @@ metadata_embedder = None
 @app.on_event("startup")
 async def startup_event():
     """Initialize all components on startup"""
-    global sandbox, agent, chat_interface
+    global sandbox, agent, chat_interface, metadata_embedder
 
     # Initialize sandbox
     sandbox = Sandbox()
@@ -43,27 +43,20 @@ async def startup_event():
         metadata_path_in_sandbox = sandbox.files.write("/data/metadata/turtle_games_dataset_metadata.md", f)
 
     # Install required packages in sandbox
-    sandbox.commands.run("pip install smolagents")
+    sandbox.commands.run("pip install smolagents faiss-gpu openai numpy")
+
+    # Initialize metadata embedder and embed metadata file
+    metadata_embedder = MetadataEmbedder(sandbox)
+    result = metadata_embedder.embed_metadata_file("/data/metadata/turtle_games_dataset_metadata.md")
+    print(f"Metadata embedding result: {result}")
 
     # Create tool factory and tools
     tool_factory = ToolFactory(sandbox)
     tools = tool_factory.create_all_tools()
 
-    # When using MCP, Initialize MCP components and create agent
-    # mcp_client, mcp_tools = await create_mcp_client()
-    # await list_tools(mcp_tools)
-
-    # For none MCP runs
-     _, local_tools = await create_local_tools()
-    await list_tools(local_tools)
-
-
-    agent = CustomAgent()
+    agent = CustomAgent(tools=tools, sandbox=sandbox, metadata_embedder=metadata_embedder)
     agent.telemetry = TelemetryManager()
     # Run the agent code in the sandbox
-
-    # Initialize chat interface
-    chat_interface = ChatInterface(agent)
 
     # Initialize chat interface
     chat_interface = ChatInterface(agent)
@@ -73,6 +66,15 @@ async def startup_event():
     except Exception as e:
         # logger.error(f"Failed to initialize application: {e}")
         raise
+
+    # For none MCP runs
+#  _: object
+# _, local_tools = await create_local_tools()
+# await list_tools(local_tools)
+
+# When using MCP, Initialize MCP components and create agent
+# mcp_client, mcp_tools = await create_mcp_client()
+# await list_tools(mcp_tools)
 
 @app.get("/stdio")
 async def stdio_endpoint(request: Request) -> EventSourceResponse:

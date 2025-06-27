@@ -61,23 +61,22 @@ class ToolFactory:
             def create_all_tools(self) -> List[Tool]:
 
             # Import your custom tools
-            from tools.data_structure_inspection_tools import inspect_dataframe, check_dataframe, analyze_data_patterns
+            from tools.data_structure_inspection_tools import InspectDataframe, ValidateData, DataValidator, AnalyzePatterns, CheckDataframe
             from tools.database_tools import DatabaseConnect, QuerySales, QueryReviews
-            from tools.documentation_tools import (DocumentLearningInsights, EmbedAndStore, RetrieveSimilarChunks,
-                                                   ValidateCleaningResults, RetrieveMetadata)
-            from tools.data_structure_feature_engineering_tools import (OneHotEncode, ApplyFeatureHashing,
-                                                                       CalculateSparsity, HandleMissingValues)
-            from tools.dataframe_tools import (DataframeConcat, DataframeDrop, DataframeMerge,
-                                               DataframeFill, DataframeMelt, DataframeToNumeric)
+            from tools.documentation_tools import DocumentLearningInsights, EmbedAndStore, RetrieveSimilarChunks, ValidateCleaningResults, RetrieveMetadata
+            from tools.data_structure_feature_engineering_tools import OneHotEncode, ApplyFeatureHashing, CalculateSparsity, HandleMissingValues
+            from tools.dataframe_tools import DataframeConcat, DataframeDrop, DataframeMerge, DataframeFill, DataframeMelt, DataframeToNumeric
 
             # Create instances of your custom tools
             all_tools =[
                 DatabaseConnect(sandbox=self.sandbox),
                 QuerySales(sandbox=self.sandbox),
                 QueryReviews(sandbox=self.sandbox),
-                inspect_dataframe(sandbox=self.sandbox),
-                check_dataframe(sandbox=self.sandbox),
-                analyze_data_patterns(sandbox=self.sandbox),
+                InspectDataframe(sandbox=self.sandbox),
+                ValidateData(sandbox=self.sandbox),
+                DataValidator(sandbox=self.sandbox),
+                AnalyzePatterns(sandbox=self.sandbox),
+                CheckDataframe(sandbox=self.sandbox),
                 DocumentLearningInsights(sandbox=self.sandbox),
                 EmbedAndStore(sandbox=self.sandbox),
                 RetrieveSimilarChunks(sandbox=self.sandbox),

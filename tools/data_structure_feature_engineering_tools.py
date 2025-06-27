@@ -4,12 +4,18 @@ from smolagents import Tool
 class OneHotEncode(Tool):
     name = "one_hot_encode"
     description = "One-hot encodes columns in a DataFrame or categories in a NumPy array."
+    inputs = {
+        "data": {"type": "object", "description": "DataFrame or array-like data to encode"},
+        "column": {"type": "string", "description": "Name of the column to encode, if input is a DataFrame", "optional": True}
+    }
+    output_type = "object"  # Returns DataFrame or np.ndarray
 
-    def __init__(self, sandbox=None):
-        super().__init__()
-        self.sandbox = sandbox
+def __init__(self, sandbox=None):
+    super().__init__()
+    self.sandbox = sandbox
 
-    def forward(self, data, column=None):
+def forward(self, data, column=None):
+
         """
         Args:
             data (DataFrame or array-like): Input data to encode.
@@ -42,6 +48,7 @@ class OneHotEncode(Tool):
 
         else:
             raise ValueError("Input must be either a pandas DataFrame or a NumPy array.")
+        pass
 
 class ApplyFeatureHashing(Tool):
     name = "apply_feature_hashing"
@@ -174,14 +181,22 @@ def CalculateSparsity(Tool) -> float:
     return sparsity
 
 class HandleMissingValues(Tool):
-    name = "handle_missing_values"
+    name = "HandleMissingValues"
     description = "Handle Missing Values in a pandas DataFrame using interpolation or various imputation strategies."
+    inputs = {
+        "df": {"type": "object", "description": "Input DataFrame containing data with missing values"},
+        "method": {"type": "string", "description": "Interpolation method (default: 'linear')", "optional": True},
+        "axis": {"type": "integer", "description": "Axis to interpolate along (default: 0)", "optional": True},
+        "fill_strategy": {"type": "string", "description": "Imputation strategy ('mean', 'median', 'mode', or scalar)", "optional": True},
+        "inplace": {"type": "boolean", "description": "Whether to modify DataFrame in place (default: False)", "optional": True}
+    }
+    output_type = "object"  # Returns DataFrame
 
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
 
-    def forward(self, df, method: object = 'linear', axis=0, fill_strategy=None, inplace=False):
+    def forward(self, df, method='linear', axis=0, fill_strategy=None, inplace=False):
         """
         Args:
             df (pd.DataFrame): Input DataFrame containing data with missing values.
@@ -232,3 +247,4 @@ class HandleMissingValues(Tool):
             raise ValueError(f"Error handling missing values: {e}")
 
         return df
+    pass

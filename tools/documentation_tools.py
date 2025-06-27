@@ -43,8 +43,13 @@ Returns an output of type: {{tool.output_type}}
 """
 
 class RetrieveMetadata(Tool):
-    name = "RetrieveMetadata"
+    name = "retrieve_metadata"
     description = "Search the dataset metadata for relevant information"
+    inputs = {
+        "query": {"type": "string", "description": "What to search for in the metadata"},
+        "k": {"type": "integer", "description": "Number of results to return (default: 3)"}
+    }
+    output_type = "string"
 
     def __init__(self, sandbox=None, metadata_embedder=None):
         super().__init__()
@@ -74,11 +79,18 @@ class RetrieveMetadata(Tool):
             response += f"{result['content']}\n\n"
 
         return response
+    pass
+
 
 
 class DocumentLearningInsights(Tool):
-    name = "DocumentLearningInsights"
+    name = "document_learning_insights"
     description = "Logs the agent's insights from a data chunk, assigns a chunk number automatically, and stores both the markdown and JSON summaries with embeddings."
+    inputs = {
+        "notes": {"type": "string", "description": "The agent's reflections on the current chunk"}
+    }
+    output_type = "string"
+
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
@@ -124,19 +136,20 @@ class DocumentLearningInsights(Tool):
         self.sandbox.files.write(index_path, str(chunk_number).encode())
 
         return f"Logged and embedded notes for chunk {chunk_number}."
+    pass
 
 class EmbedAndStore(Tool):
-    name = "EmbedAndStore"
+    name = "embed_and_store"
     description = "Embeds agent notes and stores them separately from metadata"
+    inputs = {
+        "notes": {"type": "string", "description": "The agent's notes to embed"},
+        "metadata": {"type": "dict", "description": "Optional metadata about the notes (chunk number, etc.)", "optional": True}
+    }
+    output_type = "string"
 
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-        self.openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-        # Separate paths for agent notes
-        self.agent_notes_index_path = "embeddings/agent_notes_index.faiss"
-        self.agent_notes_store_path = "embeddings/agent_notes_store.json"
 
     def forward(self, notes: str, metadata: dict = None) -> str:
         """
@@ -195,6 +208,7 @@ class EmbedAndStore(Tool):
 
         except Exception as e:
             return f"Error embedding notes: {e}"
+        pass
 
 class RetrieveSimilarChunks(Tool):
     name = "RetrieveSimilarChunks"

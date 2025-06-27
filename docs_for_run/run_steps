@@ -4,3 +4,14 @@
 ```
 vllm serve 'models/Qwen/Qwen2.5-Coder-32B.gguf
 ```
+
+
+
+
+
+Syst prompts comes out similar to this:
+```
+  - retrieve_metadata: Search the dataset metadata for relevant information
+      Takes inputs: { "query": { "type": "string", "description": "What to search for in the metadata" }, "k": { "type": "integer", "description": "Number of results to return (default: 3)" } }
+      Returns an output of type: string
+```

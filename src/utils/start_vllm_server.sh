@@ -3,20 +3,30 @@
 import subprocess
 import sys
 import os
+from openai import OpenAI
 
-def start_vllm_server:
-    model_path = "./models/Qwen/Qwen2.5-Coder-32B.gguf"
+def start_vllm_server():
+    model_path = "../models/Qwen/Qwen2.5-Coder-32B.gguf"
+    # Modify OpenAI's API key and API base to use vLLM's API server.
+    openai_api_key = "EMPTY"
+    openai_api_base = "http://localhost:8000/v1"
+    client = OpenAI(
+        # defaults to os.environ.get("OPENAI_API_KEY")
+        api_key=openai_api_key,
+        base_url=openai_api_base,
+    )
 
     # vLLM server command
     cmd = [
         "python", "-m", "vllm.entrypoints.openai.api_server",
         "--model", model_path,
         "--host", "0.0.0.0",
-        "--port", "8000",
+        "--port", "8050",
         "--served-model-name", "Qwen2.5-Coder-32B",
         "--max-model-len", "8192",
-        "--gpu-memory-utilization", "0.9",
+        "--gpu-memory-utilization", "0.7",
         "--trust-remote-code",
+        "--disable-log-requests",
         "--dtype", "auto",
         # Add quantization if needed for your GGUF
         "--quantization", "gguf",

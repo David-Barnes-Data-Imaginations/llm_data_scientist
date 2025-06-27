@@ -17,32 +17,6 @@ agent_notes_store_path = "embeddings/agent_notes_store.json"
 openai_client = OpenAI()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # for embeddings
 
-"""
- The 'MultiStepAgent' tool class for the functions used by the agent. Subclass this and implement the `forward` method as well as the
-following class attributes:
-
-- **description** (`str`) -- A short description of what your tool does, the inputs it expects and the output(s) it
-  will return. For instance 'This is a tool that downloads a file from a `url`. It takes the `url` as input, and
-  returns the text contained in the file'.
-- **name** (`str`) -- A performative name that will be used for your tool in the prompt to the agent. For instance
-  `"text-classifier"` or `"image_generator"`.
-- **inputs** (`Dict[str, Dict[str, Union[str, type, bool]]]`) -- The dict of modalities expected for the inputs.
-  It has one `type`key and a `description`key.
-  This is used by `launch_gradio_demo` or to make a nice space from your tool, and also can be used in the generated
-  description for your tool.
-- **output_type** (`type`) -- The type of the tool output. This is used by `launch_gradio_demo`
-  or to make a nice space from your tool, and also can be used in the generated description for your tool.
-
-You can also override the method [`~Tool.setup`] if your tool has an expensive operation to perform before being
-usable (such as loading a model). [`~Tool.setup`] will be called the first time you use your tool, but not at
-instantiation.
-
-{%- for tool in tools.values() %}
-- {{ tool.name }}: {{ tool.description }}
-Takes inputs: {{tool.inputs}}
-Returns an output of type: {{tool.output_type}}
-{%- endfor %}
-"""
 
 class RetrieveMetadata(Tool):
     name = "retrieve_metadata"

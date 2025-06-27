@@ -6,27 +6,21 @@ database operations, and documentation.
 """
 
 # Import from data_structure_inspection_tools.py
-from .data_structure_inspection_tools import analyze_data_patterns, check_dataframe, inspect_dataframe
-
+from .data_structure_inspection_tools import AnalyzePatterns, CheckDataframe, InspectDataframe
 # Import from data_structure_feature_engineering_tools.py
-from .data_structure_feature_engineering_tools import (
-    OneHotEncode,
-    ApplyFeatureHashing,
-    SmoteBalance,
-    HandleMissingValues,
-    CalculateSparsity
-)
+from .data_structure_feature_engineering_tools import OneHotEncode, ApplyFeatureHashing, SmoteBalance, HandleMissingValues, CalculateSparsity
+
 
 # Import from database_tools.py
-from .database_tools import DatabaseConnect, QuerySales,
+from .database_tools import DatabaseConnect, QuerySales, QueryReviews
 
 # Import from documentation_tools.py
 from .documentation_tools import (
     DocumentLearningInsights,
-    embed_and_store,
-    retrieve_similar_chunks,
-    validate_cleaning_results,
-    save_cleaned_dataframe
+    EmbedAndStore,
+    RetrieveSimilarChunks,
+    ValidateCleaningResults,
+    SaveCleanedDataframe
 )
 
 __all__ = [
@@ -36,21 +30,21 @@ __all__ = [
     'InspectDataframe',
     
     # Data structure feature engineering tools
-    'OneHotoEncode',
-    'apply_feature_hashing',
-    'smote_balance',
-    'handle_missing_values',
-    'calculate_sparsity',
+    'OneHotEncode',
+    'ApplyFeatureHashing',
+    'SmoteBalance',
+    'HandleMissingValues',
+    'CalculateSparsity',
     
     # Database tools
-    'get_db_connection',
-    'query_sales',
-    'query_reviews',
+    'DatabaseConnect',
+    'QuerySales',
+    'QueryReviews',
     
     # Documentation tools
     'DocumentLearningInsights',
-    'embed_and_store',
-    'retrieve_similar_chunks',
-    'validate_cleaning_results',
-    'save_cleaned_dataframe'
+    'EmbedAndStore',
+    'RetrieveSimilarChunks',
+    'ValidateCleaningResults',
+    'SaveCleanedDataframe'
 ]

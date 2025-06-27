@@ -3,6 +3,7 @@ from smolagents.models import OpenAIModel
 from typing import List
 from smolagents import Tool
 from src.utils.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
+from src.config import Settings
 
 class CustomAgent:
     """Custom agent wrapper that configures ToolCallingAgent with our tools and settings"""
@@ -19,21 +20,23 @@ class CustomAgent:
             "chat": CHAT_PROMPT
         }
         
+        # Use settings from config
+        vllm_config = Settings.vllm_config
+        
         # Create OpenAI-compatible model pointing to vLLM server
         model = OpenAIModel(
-            model_id="Qwen2.5-Coder-32B",  # This should match --served-model-name
-            api_key="dummy-key",  # vLLM doesn't require real API key for local server
-            api_base="http://localhost:8050/v1",  # vLLM server endpoint
-            max_tokens=8192,
-            temperature=0.2,
-            top_p=0.8,
-            # Note: top_k is handled by vLLM server, not passed here
+            model_id=vllm_config.model_name,
+            api_key=vllm_config.api_key,
+            api_base=vllm_config.api_base,
+            max_tokens=vllm_config.max_tokens,
+            temperature=vllm_config.temperature,
+            top_p=vllm_config.top_p,
         )
         
         # Create the actual ToolCallingAgent
         self.agent = ToolCallingAgent(
             tools=self.tools,
-            model=model,  # Use the vLLM model instead of model_name
+            model=model,
             prompt_templates=templates,
             add_base_tools=True,
             executor_type="e2b",
@@ -43,7 +46,6 @@ class CustomAgent:
             stream_outputs=True,
         )
         
-        # Optional telemetry (will be set in main.py)
         self.telemetry = None
     
     def run(self, task: str):

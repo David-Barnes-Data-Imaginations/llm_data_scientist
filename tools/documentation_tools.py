@@ -1,4 +1,3 @@
-from ray.llm._internal.serve.config_generator.utils import gpu
 from smolagents import Tool
 import pandas as pd
 import json

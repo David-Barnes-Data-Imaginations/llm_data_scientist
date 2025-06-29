@@ -1,10 +1,10 @@
 from main import dataframe_store
-from src.data.validate_schema import DataValidator
+from src.utils.validate_schema import DataValidator
 import pandas as pd
 import numpy as np
 from smolagents import Tool
-from pydantic import BaseModel, ValidationError
-from typing import Tuple, List, Dict, Any
+from pydantic import ValidationError
+from typing import List, Dict, Any
 
 from src.client.telemetry import TelemetryManager
 telemetry = TelemetryManager()
@@ -248,24 +248,3 @@ class InspectDataframe(Tool):
         # in the summary statistics, an argument can be added to the describe() method.
         return df.describe(include='all')
 
-
-class describe_dataframe(self, sandbox=None):
-    name = "describe_dataframe"
-    description = "Inspects and provides a comprehensive overview of a pandas DataFrame."
-    inputs = {
-        "df": {"type": "object", "description": "The DataFrame to inspect and analyze"}
-    }
-    output_type = "object"  # Returns DataFrame with descriptive statistics
-
-    def __init__(self, sandbox=None):
-        super().__init__()
-        self.sandbox = sandbox
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("describe_dataframe")
-        """
-        Returns a basic description of the stored DataFrame.
-        """
-        df = dataframe_store.get(name)
-        if df is None:
-            raise ValueError(f"No DataFrame named '{name}' found.")
-        return df.describe().to_dict()

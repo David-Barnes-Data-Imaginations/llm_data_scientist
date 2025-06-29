@@ -56,3 +56,41 @@ class CopyDataframe(Tool):
         dataframe_store[copy_name] = dataframe_store[source_dataframe].copy()
         return f"📄 DataFrame '{source_dataframe}' copied to '{copy_name}'"
 
+class SaveCleanedDataframe(Tool):
+    name = "save_cleaned_dataframe"
+    description = "Saves the cleaned DataFrame to a CSV in the sandbox."
+    inputs = {
+        "df": {"type": "object", "description": "The cleaned DataFrame"},
+        "filename": {"type": "string", "description": "File name for the CSV output", "optional": True, "nullable": True}
+    }
+    output_type = "string"  # Returns confirmation message
+
+    def __init__(self, sandbox=None):
+        super().__init__()
+        self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("save_cleaned_dataframe")
+        self.trace.add_input("df", "The cleaned DataFrame")
+        self.trace.add_input("filename", "File name for the CSV output")
+        self.trace.add_output("confirmation", "Confirmation message")
+        self.trace.end()
+
+    def forward(self, df: pd.DataFrame, filename: str = "tg_reviews_cleaned.csv") -> str:
+        """
+        Args:
+            df (pd.DataFrame): The cleaned DataFrame
+            filename (str): File name for the CSV output
+
+        Returns:
+            str: Confirmation message
+        """
+        csv_bytes = df.to_csv(index=False).encode()
+
+        if self.sandbox:
+            self.sandbox.files.write(filename, csv_bytes)
+            return f"Saved cleaned DataFrame to sandbox file: {filename}"
+        else:
+            with open(filename, "wb") as f:
+                f.write(csv_bytes)
+            return f"Saved cleaned DataFrame locally: {filename}"

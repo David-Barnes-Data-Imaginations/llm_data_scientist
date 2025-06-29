@@ -1,4 +1,5 @@
 from smolagents import Tool
+from src.client.telemetry import TelemetryManager
 
 # functions from my pip library to be turned into tools depending on which functions i choose:
 class OneHotEncode(Tool):
@@ -13,6 +14,13 @@ class OneHotEncode(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("one_hot_encode")
+        self.trace.add_input("data", "DataFrame or array-like data to encode")
+        self.trace.add_input("column", "Name of the column to encode, if input is a DataFrame")
+        self.trace.add_output("encoded_data", "DataFrame or np.ndarray with one-hot features")
+        self.trace.end()
 
     def forward(self, data, column=None):
 
@@ -62,6 +70,13 @@ class ApplyFeatureHashing(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("apply_feature_hashing")
+        self.trace.add_input("data", "An iterable object such as a list of lists, or a pandas DataFrame/Series")
+        self.trace.add_input("n_features", "Number of output features (columns) for the hash space")
+        self.trace.add_output("hashed_features", "Transformed data with hashed features")
+        self.trace.end()
 
     def forward(self, data, n_features=10):
         """
@@ -122,6 +137,15 @@ class SmoteBalance(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("smote_balance")
+        self.trace.add_input("X", "Input features (DataFrame or array-like)")
+        self.trace.add_input("y", "Target values (Series or array-like)")
+        self.trace.add_input("test_size", "Proportion of the dataset for testing")
+        self.trace.add_input("random_state", "Random seed for reproducibility")
+        self.trace.add_output("balanced_datasets", "Tuple containing balanced training data and original test data")
+        self.trace.end()
+
     def forward(self, X, y, test_size=0.3, random_state=42):
         """
         Args:
@@ -175,6 +199,12 @@ class CalculateSparsity(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("calculate_sparsity")
+        self.trace.add_input("data", "Input array (can be any shape)")
+        self.trace.add_output("sparsity", "Sparsity as a proportion of zero elements (0 to 1)")
+        self.trace.end()
+
     def forward(self, data: object) -> float:
         """
         Calculate and return the sparsity of the given 'data'.
@@ -212,6 +242,16 @@ class HandleMissingValues(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("handle_missing_values")
+        self.trace.add_input("df", "Input DataFrame containing data with missing values")
+        self.trace.add_input("method", "Interpolation method (default: 'linear')")
+        self.trace.add_input("axis", "Axis to interpolate along (default: 0)")
+        self.trace.add_input("fill_strategy", "Imputation strategy ('mean', 'median', 'mode', or scalar)")
+        self.trace.add_input("inplace", "Whether to modify DataFrame in place (default: False)")
+        self.trace.add_output("df", "DataFrame with missing values handled")
+        self.trace.end()
 
     def forward(self, df, method='linear', axis=0, fill_strategy=None, inplace=False):
         """

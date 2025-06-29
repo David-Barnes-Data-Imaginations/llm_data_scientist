@@ -1,5 +1,6 @@
 from smolagents import Tool
 from sqlalchemy import create_engine, text
+from src.client.telemetry import TelemetryManager
 
 class DatabaseConnect(Tool):
     name = "database_connect"
@@ -10,6 +11,11 @@ class DatabaseConnect(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("database_connect")
+        self.trace.add_output("connection_status", "Connection status message")
+        self.trace.end()
 
     def forward(self) -> str:
         try:
@@ -23,7 +29,7 @@ class DatabaseConnect(Tool):
 class QuerySales(Tool):
     name = "query_sales"
     description = """Query sales data from the database with flexible filtering and column selection.
-    
+
     Available columns: Product, Ranking, Platform, Year, Genre, Publisher, NA_Sales, EU_Sales, Global_Sales
     """
     inputs = {
@@ -39,6 +45,16 @@ class QuerySales(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("query_sales")
+        self.trace.add_input("columns", "Comma-separated list of columns to return")
+        self.trace.add_input("where_column", "Column name to filter by")
+        self.trace.add_input("where_value", "Value to filter for in the where_column")
+        self.trace.add_input("limit", "Maximum number of records to return")
+        self.trace.add_input("order_by", "Column to sort by")
+        self.trace.add_output("results", "Formatted query results")
+        self.trace.end()
 
     def forward(self, columns: str = "*", where_column: str = None, where_value: str = None,
                 limit: int = None, order_by: str = None) -> str:
@@ -154,7 +170,7 @@ class QuerySales(Tool):
 class QueryReviews(Tool):
     name = "query_reviews"
     description = """Query review data from the database with flexible filtering and column selection.
-    
+
     Available columns: gender, age, remuneration (k£), spending_score (1-100), loyalty_points, 
     education, language, platform, product, review, summary
     """
@@ -171,6 +187,16 @@ class QueryReviews(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("query_reviews")
+        self.trace.add_input("columns", "Comma-separated list of columns to return")
+        self.trace.add_input("where_column", "Column name to filter by")
+        self.trace.add_input("where_value", "Value to filter for in the where_column")
+        self.trace.add_input("limit", "Maximum number of records to return")
+        self.trace.add_input("order_by", "Column to sort by")
+        self.trace.add_output("results", "Formatted query results")
+        self.trace.end()
 
     def forward(self, columns: str = "*", where_column: str = None, where_value: str = None,
                 limit: int = None, order_by: str = None) -> str:
@@ -271,4 +297,3 @@ class QueryReviews(Tool):
 
         except Exception as e:
             return f"Error querying review data: {str(e)}"
-

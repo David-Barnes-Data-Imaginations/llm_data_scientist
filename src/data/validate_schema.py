@@ -1,5 +1,7 @@
 from pydantic import field_validator
 from pydantic_core import SchemaValidator, ValidationError
+from pydantic import BaseModel, ValidationError
+from typing import Tuple, List, Dict, Any
 
 # probably move
 class DataPipeline:
@@ -7,7 +9,7 @@ class DataPipeline:
         self.cleaning_stats = {'duplicates_removed': 0, 'nulls_handled': 0, 'validation_errors': 0}
 
 # Experimental - Potential reinforcement of metadata data types.
-class DataValidator():
+class DataValidator(BaseModel):
     gender: str = "male", "female"
     age: [int] = 10-100
     remuneration: float = 0.0-40.00

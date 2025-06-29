@@ -39,3 +39,31 @@ class TelemetryManager:
 # Helper functions
 def log_user_feedback(trace_id: str, is_positive: bool):
     TelemetryManager().log_feedback(trace_id, is_positive)
+
+"""
+------
+
+Use as something similar to this:
+
+trace = telemetry.start_trace("tool_name", input)
+...
+telemetry.log_event(trace, "step_name", {...})
+telemetry.finish(trace)
+
+------
+class TelemetryManager:
+    def __init__(self):
+        self.client = langfuse.Langfuse()
+
+    def start_trace(self, name: str, input_data: dict):
+        return self.client.trace(name=name, input=input_data)
+
+    def log_event(self, trace, name: str, metadata: dict):
+        trace.event(name=name, metadata=metadata)
+
+    def log_observation(self, trace, key: str, value: any):
+        trace.observation(key, value=value)
+
+    def finish(self, trace):
+        trace.end()
+"""

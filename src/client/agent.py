@@ -67,7 +67,7 @@ class ToolFactory:
 
         # Create instances of your custom tools
         tools = [
-            DatabaseConnect(sandbox=self.sandbox),
+            DatabaseConnect(sandbox=self.sandbox, ),
             QuerySales(sandbox=self.sandbox),
             QueryReviews(sandbox=self.sandbox),
             CheckDataframe(sandbox=self.sandbox),

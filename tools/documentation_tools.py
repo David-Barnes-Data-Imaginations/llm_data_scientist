@@ -5,6 +5,7 @@ import json
 import faiss
 import numpy as np
 import os
+from src.client.telemetry import TelemetryManager
 
 
 embedding_index = faiss.IndexFlatL2(1536)  # Using OpenAI's text-embedding-3-small
@@ -28,6 +29,13 @@ class RetrieveMetadata(Tool):
         super().__init__()
         self.sandbox = sandbox
         self.metadata_embedder = metadata_embedder
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("retrieve_metadata")
+        self.trace.add_input("query", "What to search for in the metadata")
+        self.trace.add_input("k", "Number of results to return (default: 3)")
+        self.trace.add_output("results", "Relevant metadata chunks")
+        self.trace.end()
 
     def forward(self, query: str, k: int = 3) -> str:
         """
@@ -64,6 +72,12 @@ class DocumentLearningInsights(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("document_learning_insights")
+        self.trace.add_input("notes", "The agent's reflections on the current chunk")
+        self.trace.add_output("confirmation", "Confirmation message including the assigned chunk number")
+        self.trace.end()
 
     def forward(self, notes: str) -> str:
         """
@@ -119,6 +133,13 @@ class EmbedAndStore(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("embed_and_store")
+        self.trace.add_input("notes", "The agent's notes to embed")
+        self.trace.add_input("metadata", "Optional metadata about the notes (chunk number, etc.)")
+        self.trace.add_output("confirmation", "Confirmation message")
+        self.trace.end()
 
     def forward(self, notes: str, metadata: dict = None) -> str:
         """
@@ -191,6 +212,13 @@ class RetrieveSimilarChunks(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("retrieve_similar_chunks")
+        self.trace.add_input("query", "The query or current goal the agent is working on")
+        self.trace.add_input("top_k", "Number of top similar chunks to return")
+        self.trace.add_output("results", "List of dictionaries with chunk information")
+        self.trace.end()
+
     def forward(self, query: str, top_k: int = 3) -> list:
         """
         Args:
@@ -246,6 +274,14 @@ class ValidateCleaningResults(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("validate_cleaning_results")
+        self.trace.add_input("chunk_number", "The chunk number being validated")
+        self.trace.add_input("original_chunk", "The original data chunk")
+        self.trace.add_input("cleaned_chunk", "The cleaned data chunk")
+        self.trace.add_output("validation_results", "Dictionary with validation results")
+        self.trace.end()
 
     def forward(self, chunk_number: int, original_chunk: list[dict], cleaned_chunk: list[dict]) -> dict:
         """
@@ -306,6 +342,13 @@ class SaveCleanedDataframe(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
+
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("save_cleaned_dataframe")
+        self.trace.add_input("df", "The cleaned DataFrame")
+        self.trace.add_input("filename", "File name for the CSV output")
+        self.trace.add_output("confirmation", "Confirmation message")
+        self.trace.end()
 
     def forward(self, df: pd.DataFrame, filename: str = "tg_reviews_cleaned.csv") -> str:
         """

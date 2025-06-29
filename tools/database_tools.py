@@ -27,12 +27,13 @@ class QuerySales(Tool):
     Available columns: Product, Ranking, Platform, Year, Genre, Publisher, NA_Sales, EU_Sales, Global_Sales
     """
     inputs = {
-        "columns": {"type": "string", "description": "Comma-separated list of columns to return (e.g., 'Platform,Global_Sales') or '*' for all columns", "optional": True},
-        "where_column": {"type": "string", "description": "Column name to filter by (e.g., 'Platform', 'Genre', 'Year')", "optional": True},
-        "where_value": {"type": "string", "description": "Value to filter for in the where_column", "optional": True},
-        "limit": {"type": "integer", "description": "Maximum number of records to return", "optional": True},
-        "order_by": {"type": "string", "description": "Column to sort by (e.g., 'Global_Sales DESC')", "optional": True}
+        "columns": {"type": "string", "description": "Comma-separated list of columns to return (e.g., 'Platform,Global_Sales') or '*' for all columns", "optional": True, "nullable": True},
+        "where_column": {"type": "string", "description": "Column name to filter by (e.g., 'Platform', 'Genre', 'Year')", "optional": True, "nullable": True},
+        "where_value": {"type": "string", "description": "Value to filter for in the where_column", "optional": True, "nullable": True},
+        "limit": {"type": "integer", "description": "Maximum number of records to return", "optional": True, "nullable": True},
+        "order_by": {"type": "string", "description": "Column to sort by (e.g., 'Global_Sales DESC')", "optional": True, "nullable": True}
     }
+
     output_type = "string"
 
     def __init__(self, sandbox=None):
@@ -41,6 +42,7 @@ class QuerySales(Tool):
 
     def forward(self, columns: str = "*", where_column: str = None, where_value: str = None,
                 limit: int = None, order_by: str = None) -> str:
+
         """
         Query sales data with flexible filtering and column selection.
 
@@ -56,41 +58,64 @@ class QuerySales(Tool):
         - query_sales(columns="*", where_column="Year", where_value="2009", limit=10)
         - query_sales(columns="Genre,Global_Sales", order_by="Global_Sales DESC", limit=5)
         """
+
         try:
             engine = create_engine('sqlite:///data/tg_database.db')
 
-            # Validate and clean column names
             valid_columns = ["Product", "Ranking", "Platform", "Year", "Genre", "Publisher",
-                             "NA_Sales", "EU_Sales", "Global_Sales"]
+                         "NA_Sales", "EU_Sales", "Global_Sales"]
+
+             # Validate and clean column names
+            column_mapping = {
+                "Product": "\"product\"",
+                "Platform": "\"platform\"",
+                "Year": "\"year\"",
+                "Genre": "\"genre\"",
+                "Publisher": "\"publisher\"",
+                "NA_Sales": "\"na_sales\"",
+                "EU_Sales": "\"eu_sales\"",
+                "Global_Sales": "\"global_sales\""
+            }
 
             if columns == "*":
                 select_clause = "*"
             else:
                 # Clean and validate column names
                 requested_cols = [col.strip() for col in columns.split(",")]
-                invalid_cols = [col for col in requested_cols if col not in valid_columns]
-                if invalid_cols:
-                    return f"Invalid columns: {invalid_cols}. Valid columns: {valid_columns}"
-                select_clause = ", ".join(requested_cols)
+                mapped_cols = []
+                for col in requested_cols:
+                    if col in column_mapping:
+                        mapped_cols.append(column_mapping[col])
+                    elif col in valid_columns:
+                        mapped_cols.append(col)
+                    elif f'"{col}"' in valid_columns:
+                        mapped_cols.append(f'"{col}"')
+                    else:
+                        return f"Invalid column: {col}. Valid columns: gender, age, remuneration, spending_score, loyalty_points, education, language, platform, product, review, summary"
+
+                select_clause = ", ".join(mapped_cols)
 
             # Build query
-            query = f"SELECT {select_clause} FROM tg_sales_table"
+            query = f"SELECT {select_clause} FROM tg_reviews_table"
             params = {}
 
             # Add WHERE clause if specified
             if where_column and where_value:
-                if where_column not in valid_columns:
-                    return f"Invalid where_column: {where_column}. Valid columns: {valid_columns}"
-                query += f" WHERE {where_column} = :where_value"
+                # Map column name if needed
+                mapped_where_col = column_mapping.get(where_column, where_column)
+                if mapped_where_col not in valid_columns and where_column not in [col.strip('"') for col in valid_columns]:
+                    return f"Invalid where_column: {where_column}"
+
+                query += f" WHERE {mapped_where_col} = :where_value"
                 params["where_value"] = where_value
 
             # Add ORDER BY clause if specified
             if order_by:
-                # Basic validation for order_by
                 order_parts = order_by.split()
-                if order_parts[0] not in valid_columns:
-                    return f"Invalid order_by column: {order_parts[0]}. Valid columns: {valid_columns}"
-                query += f" ORDER BY {order_by}"
+                mapped_order_col = column_mapping.get(order_parts[0], order_parts[0])
+                query += f" ORDER BY {mapped_order_col}"
+                if len(order_parts) > 1:
+                    query += f" {order_parts[1]}"
 
             # Add LIMIT if specified
             if limit:
@@ -103,16 +128,19 @@ class QuerySales(Tool):
                 columns_returned = result.keys()
 
                 if not rows:
-                    return "No sales data found for the specified criteria"
+                    return "No review data found for the specified criteria"
 
                 # Format results as string
-                output = f"Found {len(rows)} sales records:\n"
+                output = f"Found {len(rows)} review records:\n"
                 output += f"Columns: {list(columns_returned)}\n\n"
 
                 # Show sample of results
-                sample_size = min(10, len(rows))
+                sample_size = min(5, len(rows))  # Fewer for reviews as they can be long
                 for i, row in enumerate(rows[:sample_size]):
                     row_dict = dict(zip(columns_returned, row))
+                    # Truncate long review text for display
+                    if 'review' in row_dict and row_dict['review']:
+                        row_dict['review'] = row_dict['review'][:100] + "..." if len(str(row_dict['review'])) > 100 else row_dict['review']
                     output += f"Row {i+1}: {row_dict}\n"
 
                 if len(rows) > sample_size:
@@ -121,7 +149,7 @@ class QuerySales(Tool):
                 return output
 
         except Exception as e:
-            return f"Error querying sales data: {str(e)}"
+            return f"Error querying review data: {str(e)}"
 
 class QueryReviews(Tool):
     name = "query_reviews"
@@ -131,12 +159,13 @@ class QueryReviews(Tool):
     education, language, platform, product, review, summary
     """
     inputs = {
-        "columns": {"type": "string", "description": "Comma-separated list of columns to return or '*' for all columns", "optional": True},
-        "where_column": {"type": "string", "description": "Column name to filter by", "optional": True},
-        "where_value": {"type": "string", "description": "Value to filter for in the where_column", "optional": True},
-        "limit": {"type": "integer", "description": "Maximum number of records to return", "optional": True},
-        "order_by": {"type": "string", "description": "Column to sort by (can include ASC/DESC)", "optional": True}
+        "columns": {"type": "string", "description": "Comma-separated list of columns to return (e.g., 'Platform,Global_Sales') or '*' for all columns", "optional": True, "nullable": True},
+        "where_column": {"type": "string", "description": "Column name to filter by (e.g., 'Platform', 'Genre', 'Year')", "optional": True, "nullable": True},
+        "where_value": {"type": "string", "description": "Value to filter for in the where_column", "optional": True, "nullable": True},
+        "limit": {"type": "integer", "description": "Maximum number of records to return", "optional": True, "nullable": True},
+        "order_by": {"type": "string", "description": "Column to sort by (e.g., 'Global_Sales DESC')", "optional": True, "nullable": True}
     }
+
     output_type = "string"
 
     def __init__(self, sandbox=None):
@@ -242,3 +271,4 @@ class QueryReviews(Tool):
 
         except Exception as e:
             return f"Error querying review data: {str(e)}"
+

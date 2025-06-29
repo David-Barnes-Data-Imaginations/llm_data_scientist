@@ -1,6 +1,4 @@
-from smolagents import load_tool
-from smolagents import ToolCallingAgent as BaseAgent
-from src.client.config import Settings
+from a_mcp_versions.config import Settings
 from smolagents import ToolCallingAgent
 
 """Initialize the Agent with the specified model parameters"""

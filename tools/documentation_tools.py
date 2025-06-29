@@ -2,19 +2,16 @@ from ray.llm._internal.serve.config_generator.utils import gpu
 from smolagents import Tool
 import pandas as pd
 import json
-from e2b import Sandbox # Can replace with docker sandbox class
-from openai import OpenAI
 import faiss
 import numpy as np
 import os
-from main import sandbox
+
 
 embedding_index = faiss.IndexFlatL2(1536)  # Using OpenAI's text-embedding-3-small
 metadata_store = []
 metadata_store_path = "embeddings/metadata_store.json"
 agent_notes_index_path = "embeddings/agent_notes_index.faiss"
 agent_notes_store_path = "embeddings/agent_notes_store.json"
-openai_client = OpenAI()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # for embeddings
 
 
@@ -115,7 +112,7 @@ class EmbedAndStore(Tool):
     description = "Embeds agent notes and stores them separately from metadata"
     inputs = {
         "notes": {"type": "string", "description": "The agent's notes to embed"},
-        "metadata": {"type": "dict", "description": "Optional metadata about the notes (chunk number, etc.)", "optional": True}
+        "metadata": {"type": "dict", "description": "Optional metadata about the notes (chunk number, etc.)", "optional": True, "nullable": True}
     }
     output_type = "string"
 
@@ -186,7 +183,7 @@ class RetrieveSimilarChunks(Tool):
     description = "Retrieves the most similar past notes based on semantic similarity."
     inputs = {
         "query": {"type": "string", "description": "The query or current goal the agent is working on"},
-        "top_k": {"type": "integer", "description": "Number of top similar chunks to return", "optional": True}
+        "top_k": {"type": "integer", "description": "Number of top similar chunks to return", "optional": True, "nullable": True}
     }
     output_type = "list"  # Returns list of dictionaries
 
@@ -302,7 +299,7 @@ class SaveCleanedDataframe(Tool):
     description = "Saves the cleaned DataFrame to a CSV in the sandbox."
     inputs = {
         "df": {"type": "object", "description": "The cleaned DataFrame"},
-        "filename": {"type": "string", "description": "File name for the CSV output", "optional": True}
+        "filename": {"type": "string", "description": "File name for the CSV output", "optional": True, "nullable": True}
     }
     output_type = "string"  # Returns confirmation message
 

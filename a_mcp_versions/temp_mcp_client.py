@@ -1,6 +1,6 @@
 from smolagents import ToolCollection
 from mcp import StdioServerParameters
-from src.client.config import SERVER_ENDPOINT
+from a_mcp_versions.config import SERVER_ENDPOINT
 import os
 # Server parameters for MCP
 server_parameters = StdioServerParameters(

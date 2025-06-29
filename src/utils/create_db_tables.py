@@ -47,6 +47,3 @@ def create_table_from_parquet() -> None:
 
     # Finish
     conn.close()
-
-if __name__ == "__main__":
-    create_table_from_parquet()

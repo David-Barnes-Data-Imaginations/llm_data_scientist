@@ -6,7 +6,7 @@ import os
 from openai import OpenAI
 
 def start_vllm_server():
-    model_path = "../models/Qwen/Qwen2.5-Coder-32B.gguf"
+    model_path = "./models/GemmaCoder3-12B"
     # Modify OpenAI's API key and API base to use vLLM's API server.
     openai_api_key = "EMPTY"
     openai_api_base = "http://localhost:8000/v1"
@@ -22,14 +22,12 @@ def start_vllm_server():
         "--model", model_path,
         "--host", "0.0.0.0",
         "--port", "8050",
-        "--served-model-name", "Qwen2.5-Coder-32B",
+        "--served-model-name", "DeepSeek-R1-0528-Qwen3-8B",
         "--max-model-len", "8192",
         "--gpu-memory-utilization", "0.7",
         "--trust-remote-code",
         "--disable-log-requests",
         "--dtype", "auto",
-        # Add quantization if needed for your GGUF
-        "--quantization", "gguf",
     ]
 
     # shellcheck disable=SC1065

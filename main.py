@@ -1,52 +1,42 @@
-import asyncio, os
+import asyncio, os, base64
 from fastapi import FastAPI, Request
-from gradio import ChatInterface
-from sse_starlette.sse import EventSourceResponse
 from e2b_code_interpreter import Sandbox
 from src.client.telemetry import TelemetryManager
 from src.utils.metadata_embedder import MetadataEmbedder
 from src.client.agent import ToolFactory, CustomAgent
-from src.utils.vllm_utils import wait_for_vllm_server, start_vllm_server_background
-from typing import AsyncGenerator
-
-# Initialize FastAPI
-app = FastAPI()
+from src.client.ui.chat import GradioUI
+from src.utils.ollama_utils import wait_for_ollama_server, start_ollama_server_background, pull_model
+from openai import OpenAI
 
 HF_TOKEN = os.getenv('HF_TOKEN')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+LANGFUSE_PUBLIC_KEY= os.getenv('LANGFUSE_PUBLIC_KEY')
+LANGFUSE_SECRET_KEY= os.getenv('LANGFUSE_SECRET_KEY')
+LANGFUSE_AUTH=base64.b64encode(f"{LANGFUSE_PUBLIC_KEY}:{LANGFUSE_SECRET_KEY}".encode()).decode()
+import pandas as pd
+import numpy as np
+from typing import Dict
 
-# Global variables for component access
-sandbox = None
-agent = None
-chat_interface = None
-metadata_embedder = None
-vllm_process = None
+os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "https://cloud.langfuse.com/api/public/otel" # EU data region
+os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Basic {LANGFUSE_AUTH}"
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize all components on startup"""
-    global sandbox, agent, chat_interface, metadata_embedder, vllm_process
+# Global memory (replace these with a controlled registry in production / CA via the below 'with open' etc..)
+dataframe_store: Dict[str, pd.DataFrame] = {}
+global sandbox, agent, chat_interface, metadata_embedder
 
-    # Start vLLM server first
-    print("🚀 Starting vLLM server...")
-    model_path = "./models/Qwen/Qwen2.5-Coder-32B.gguf"
-    vllm_process = start_vllm_server_background(model_path)
-    
-    # Wait for vLLM to be ready
-    if not wait_for_vllm_server(max_wait=120):  # 2 minutes timeout
-        raise RuntimeError("Failed to start vLLM server")
+# In your main function:
+def main():
 
-    # Initialize sandbox
-    print("🔧 Initializing sandbox...")
     sandbox = Sandbox()
 
     # Upload dataset to sandbox
     with open("./src/data/tg_database.db", "rb") as f:
         dataset_path_in_sandbox = sandbox.files.write("/data/tg_database.db", f)
-    with open("./src/data/metadata/turtle_games_dataset_metadata.md", "rb") as f:
+    with open("./src/data/metadata/turtle_games_dataset_metadata.md", "r") as f:
         metadata_path_in_sandbox = sandbox.files.write("/data/metadata/turtle_games_dataset_metadata.md", f)
 
     # Install required packages in sandbox
-    sandbox.commands.run("pip install smolagents faiss-cpu openai numpy sqlalchemy pandas")
+    sandbox.commands.run("pip install smolagents faiss-cpu openai numpy sqlalchemy pandas imbalanced-learn")
 
     # Initialize metadata embedder and embed metadata file
     print("📚 Setting up metadata embeddings...")
@@ -54,57 +44,27 @@ async def startup_event():
     result = metadata_embedder.embed_metadata_file("/data/metadata/turtle_games_dataset_metadata.md")
     print(f"Metadata embedding result: {result}")
 
-    # Create tool factory and tools
+    # Create agent, tool factory and tools
     print("🛠️ Creating tools...")
     tool_factory = ToolFactory(sandbox, metadata_embedder)
     tools = tool_factory.create_all_tools()
 
-    # Create agent with tools and dependencies
-    print("🤖 Creating agent...")
-    agent = CustomAgent(tools=tools, sandbox=sandbox, metadata_embedder=metadata_embedder)
+    agent = CustomAgent(
+        tools=tools,
+        sandbox=sandbox,
+        metadata_embedder=metadata_embedder,
+        model_id="ollama://DeepSeek-R1-Distill"  # Specify your Ollama model
+    )
     agent.telemetry = TelemetryManager()
 
-    # Initialize chat interface
-    chat_interface = ChatInterface(agent)
+    # Initialize chat interface using your custom GradioUI
+    print("🌐 Initializing Gradio interface...")
+    gradio_ui = GradioUI(agent)
 
     print("✅ Application startup complete!")
 
-@app.get("/stdio")
-async def stdio_endpoint(request: Request) -> EventSourceResponse:
-    """Server-Sent Events endpoint"""
-    async def event_generator() -> AsyncGenerator[str, None]:
-        while True:
-            if await request.is_disconnected():
-                break
-            await asyncio.sleep(1)
-    return EventSourceResponse(event_generator())
-
-@app.get("/chat")
-async def launch_chat():
-    """Launch the chat interface"""
-    if chat_interface is None:
-        return {"error": "Chat interface not initialized"}
-    interface = chat_interface.create_interface()
-    interface.launch()
-    return {"status": "Chat interface launched"}
-
-def run_server():
-    """Run the FastAPI server"""
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8080)
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    global sandbox, vllm_process
-    
-    if sandbox:
-        await sandbox.cleanup()
-    
-    if vllm_process:
-        print("🛑 Stopping vLLM server...")
-        vllm_process.terminate()
-        vllm_process.wait()
+    # Launch the interface
+    gradio_ui.launch(share=False, server_port=7860)
 
 if __name__ == "__main__":
-    run_server()
+    main()

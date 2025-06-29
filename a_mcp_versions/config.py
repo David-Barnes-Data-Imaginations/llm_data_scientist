@@ -2,8 +2,15 @@ from pathlib import Path
 from dataclasses import dataclass
 import os
 
+from src.utils import CHAT_PROMPT, TCA_MAIN_PROMPT, TCA_SYSTEM_PROMPT
+
 # Project root directory
 ROOT_DIR = Path(__file__).parent.parent
+templates = {
+    "system": TCA_SYSTEM_PROMPT,
+    "main": TCA_MAIN_PROMPT,
+    "chat": CHAT_PROMPT
+}
 
 @dataclass
 class VLLMConfig:
@@ -16,7 +23,7 @@ class VLLMConfig:
     max_tokens: int = 8192
     temperature: float = 0.2
     top_p: float = 0.8
-    stream: bool = True
+
 
 @dataclass
 class AgentConfig:
@@ -26,6 +33,8 @@ class AgentConfig:
     verbosity_level: int = 2
     executor_type: str = "e2b"
     add_base_tools: bool = True
+    stream: bool = True
+    prompt_templates: dict = templates
 
 class Settings:
     vllm_config = VLLMConfig()

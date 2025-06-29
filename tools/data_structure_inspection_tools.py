@@ -6,29 +6,43 @@ from smolagents import Tool
 import numpy as np
 from src.data.validate_schema import DataValidator
 
-# tool under consideration as it is possibly less accurate than normal analysis
-# Possibly ask llm to create 2 DF's and use both methods
+import pandas as pd
+import numpy as np
+from smolagents import Tool
+from pydantic import BaseModel, ValidationError
+from typing import Tuple, List, Dict, Any
+
+# Define your schema here (placeholder)
+class DataValidator(BaseModel):
+    # Replace with your actual schema fields
+    example_field: str
+
+
+
 class ValidateData(Tool):
     name = "validate_data"
-    description = "Validates data against a specified schema and returns a cleaned DataFrame."
+    description = "Validates data against a schema and returns cleaned DataFrame and error list."
+    """
+    Example input: 
+    result = ValidateData().forward(chunk=my_df, name="df_validated_chunk1")
+
+    # Agent now wants to drop a column
+    df = dataframe_store["df_validated_chunk1"]
+    df.drop(columns=["bad_col"], inplace=True)
+    """
     inputs = {
-        "chunk": {"type": "object", "description": "DataFrame to validate"},
-        "valid_rows": {"type": "list", "description": "List to store valid rows", "optional": True},
-        "errors": {"type": "list", "description": "List to store validation errors", "optional": True}
+        "chunk": {"type": "object", "description": "DataFrame chunk to validate"},
+        "name": {"type": "string", "description": "Name to store the cleaned dataframe under", "optional": True},
     }
-    output_type = "tuple"  # Returns tuple of DataFrame and errors
+    output_type = "object"
 
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-        self.valid_rows = []
-        self.errors = []
-        self.cleaning_stats = {}
+        self.cleaning_stats: Dict[str, Any] = {}
 
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
         initial_rows = len(df)
-
-        # Remove duplicates
         df = df.drop_duplicates()
         self.cleaning_stats['duplicates_removed'] = initial_rows - len(df)
 
@@ -40,47 +54,49 @@ class ValidateData(Tool):
         df[string_columns] = df[string_columns].fillna('Unknown')
         return df
 
-    def forward(self, chunk: DataFrame, valid_rows= None, errors=None) -> tuple[DataFrame, {append, name}]:
+    def forward(self, chunk: pd.DataFrame, name: str = "validated_df") -> Dict[str, Any]:
         df = pd.DataFrame(chunk)
-        for idx, row in df.iterrows():
+        df_clean = self.clean_data(df)
+
+        valid_rows: List[Dict] = []
+        errors: List[Dict] = []
+
+        for idx, row in df_clean.iterrows():
             try:
                 validated_row = DataValidator(**row.to_dict())
                 valid_rows.append(validated_row.model_dump())
             except ValidationError as e:
                 errors.append({'row': idx, 'errors': str(e)})
 
-            self.cleaning_stats['validation_errors'] = len(errors)
-        return pd.DataFrame(valid_rows), errors
+        self.cleaning_stats['validation_errors'] = len(errors)
 
-    def process(self, df: pd.DataFrame) -> dict:
-        cleaned_df = self.clean_data(df.copy())
-        validated_df, validation_errors = self.forward(cleaned_df, valid_rows=[], errors=[])
+        # Store cleaned validated df
+        result_df = pd.DataFrame(valid_rows)
+        dataframe_store[name] = result_df
 
         return {
-            'cleaned_data': validated_df,
-            'validation_errors': validation_errors,
+            'stored_as': name,
+            'shape': result_df.shape,
+            'validation_errors': errors,
             'stats': self.cleaning_stats
         }
-
-
-
 class AnalyzePatterns(Tool):
     name = "analyze_patterns"
     description = "Analyzes specific patterns in the data chunk based on the specified analysis type."
     inputs = {
-        "chunk": {"type": "list", "description": "List of dictionaries containing the data"},
-        "analysis_type": {"type": "string", "description": "Type of analysis to perform (demographic, review_sentiment, spending_patterns, platform_specific)"}
+        "chunk": {"type": object, "description": "object containing the data"},
+        "analysis_type": {"type": str, "description": "Type of analysis to perform (demographic, review_sentiment, spending_patterns, platform_specific)"}
     }
-    output_type = "dict"  # Returns dictionary of analysis results
+    output_type = "chunk"  # Returns dictionary of analysis results
 
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
 
-    def forward(self, chunk: list[dict], analysis_type: str) -> dict:
+    def forward(self, chunk: str, analysis_type: str) -> dict:
         """
         Args:
-            chunk (list[dict]): List of dictionaries containing the data
+            chunk : String containing the data
             analysis_type (str): Type of analysis to perform:
                 - 'demographic': Age/gender/education patterns
                 - 'review_sentiment': Analysis of review text patterns
@@ -132,18 +148,18 @@ class CheckDataframe(Tool):
     name = "check_dataframe"
     description = "Inspects a pandas DataFrame for any non-numeric, NaN, or infinite values."
     inputs = {
-        "chunk": {"type": "list", "description": "List of dictionaries to be converted to DataFrame and checked"}
+        "chunk": {"type": str, "description": "dataframe to be checked"}
     }
-    output_type = "string"  # Returns success message or raises ValueError
+    output_type = str  # Returns success message or raises ValueError
 
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
 
-    def forward(self, chunk: list[dict]) -> str:
+    def forward(self, chunk: object) -> str:
         """
         Args:
-            chunk (list[dict]): List of dictionaries to be converted to DataFrame and checked.
+            chunk dataframe to be checked.
 
         Returns:
             str: Success message if no issues are found.
@@ -211,3 +227,23 @@ class InspectDataframe(Tool):
         # To include categorical columns
         # in the summary statistics, an argument can be added to the describe() method.
         return df.describe(include='all')
+
+
+class describe_dataframe(self, sandbox=None):
+    name = "inspect_dataframe"
+    description = "Inspects and provides a comprehensive overview of a pandas DataFrame."
+    inputs = {
+        "df": {"type": "object", "description": "The DataFrame to inspect and analyze"}
+    }
+output_type = "object"  # Returns DataFrame with descriptive statistics
+
+def __init__(self, sandbox=None):
+    super().__init__()
+    self.sandbox = sandbox
+    """
+    Returns a basic description of the stored DataFrame.
+    """
+    df = dataframe_store.get(name)
+    if df is None:
+        raise ValueError(f"No DataFrame named '{name}' found.")
+    return df.describe().to_dict()

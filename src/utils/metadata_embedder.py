@@ -2,14 +2,14 @@ import os
 import json
 import numpy as np
 from openai import OpenAI
-import faiss
-from pathlib import Path
+import faiss as faiss
+
+
 
 class MetadataEmbedder:
     """Class for embedding metadata and storing them in a sandbox"""
     def __init__(self, sandbox=None):
         self.sandbox = sandbox
-        self.openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
         # Separate storage for metadata vs agent notes
         self.metadata_index_path = "embeddings/metadata_index.faiss"

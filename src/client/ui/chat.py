@@ -2,7 +2,6 @@
 import gradio as gr
 from langchain_core.chat_sessions import ChatSession
 from typing import Generator
-
 from smolagents.agent_types import AgentAudio, AgentImage, AgentText
 from smolagents.agents import MultiStepAgent, PlanningStep, ToolCallingAgent
 from smolagents.memory import ActionStep, FinalAnswerStep

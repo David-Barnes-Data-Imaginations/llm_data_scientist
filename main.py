@@ -23,7 +23,6 @@ os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "https://cloud.langfuse.com/api/publ
 os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Basic {LANGFUSE_AUTH}"
 
 # Global memory (replace these with a controlled registry in production / CA via the below 'with open' etc..)
-dataframe_store: Dict[str, pd.DataFrame] = {}
 global sandbox, agent, chat_interface, metadata_embedder
 
 # In your main function:
@@ -50,6 +49,11 @@ def main():
     print("🛠️ Creating tools...")
     tool_factory = ToolFactory(sandbox, metadata_embedder)
     tools = tool_factory.create_all_tools()
+
+    # Embed tool help notes
+    print("📖 Embedding tool help notes...")
+    help_result = metadata_embedder.embed_tool_help_notes(tools)
+    print(f"Tool help embedding result: {help_result}")
 
     agent = CustomAgent(
         tools=tools,

@@ -2,14 +2,14 @@
 import gradio as gr
 from langchain_core.chat_sessions import ChatSession
 from typing import Generator
-from smolagents.agent_types import AgentAudio, AgentImage, AgentText
-from smolagents.agents import MultiStepAgent, PlanningStep, ToolCallingAgent
+from smolagents.agent_types import AgentText
+from smolagents.agents import PlanningStep, ToolCallingAgent
 from smolagents.memory import ActionStep, FinalAnswerStep
 from smolagents.models import ChatMessageStreamDelta, agglomerate_stream_deltas
 from smolagents.utils import _is_package_available
 import re
 
-from src.utils.prompts import CHAT_PROMPT, TCA_SYSTEM_PROMPT
+from a_mcp_versions.prompts import CHAT_PROMPT, TCA_SYSTEM_PROMPT
 
 
 def get_step_footnote_content(step_log: ActionStep | PlanningStep, step_name: str) -> str:

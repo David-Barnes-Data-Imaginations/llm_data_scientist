@@ -1,7 +1,7 @@
 from smolagents import ToolCallingAgent
 from typing import List
 from smolagents import Tool
-from src.utils.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
+from a_mcp_versions.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
 
 # Prompt templates
 templates = {

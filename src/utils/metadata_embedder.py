@@ -169,3 +169,62 @@ class MetadataEmbedder:
             print(f"Error searching metadata: {e}")
         print(sandbox.files.listdir("/data/metadata"))
         return []
+
+
+
+def embed_tool_help_notes(self, tools: list) -> str:
+    """
+    Embeds the help_notes field from each tool into the metadata index.
+
+    Args:
+        tools (list): List of tool instances
+
+    Returns:
+        str: Success message with count of embedded help notes
+    """
+    if not tools:
+        return "No tools provided"
+
+    help_notes_count = 0
+    embeddings = []
+
+    for tool in tools:
+        if hasattr(tool, "help_notes") and tool.help_notes:
+            try:
+                # Create embedding for the help notes
+                response = self.openai_client.embeddings.create(
+                    input=tool.help_notes,
+                    model="text-embedding-3-small"
+                )
+                embedding = response.data[0].embedding
+                embeddings.append(embedding)
+
+                # Store metadata about this tool help
+                self.metadata_store.append({
+                    "type": "tool_help",
+                    "tool_name": tool.name,
+                    "content": tool.help_notes,
+                    "created_at": "startup"
+                })
+                help_notes_count += 1
+
+            except Exception as e:
+                print(f"Error embedding help notes for tool {tool.name}: {e}")
+                continue
+
+    if embeddings and self.metadata_index is not None:
+        # Add embeddings to existing index
+        self.metadata_index.add(np.array(embeddings).astype('float32'))
+
+        # Save updated index and store
+        try:
+            index_bytes = faiss.serialize_index(self.metadata_index).tobytes()
+            self.sandbox.files.write(self.metadata_index_path, index_bytes)
+
+            store_json = json.dumps(self.metadata_store, indent=2)
+            self.sandbox.files.write(self.metadata_store_path, store_json.encode())
+
+        except Exception as e:
+            return f"Error saving tool help embeddings: {e}"
+
+    return f"Successfully embedded help notes for {help_notes_count} tools"

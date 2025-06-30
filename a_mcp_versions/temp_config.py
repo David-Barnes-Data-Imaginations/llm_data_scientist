@@ -1,7 +1,6 @@
 from pathlib import Path
 from dataclasses import dataclass
-from smolagents import CodeAgent
-from src.utils.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
+from a_mcp_versions.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
 from src.tools import *
 # Project root directory
 ROOT_DIR = Path(__file__).parent.parent

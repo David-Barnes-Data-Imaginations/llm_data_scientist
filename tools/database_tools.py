@@ -7,6 +7,17 @@ class DatabaseConnect(Tool):
     description = "Establish database connection to the turtle games database and test connectivity"
     inputs = {}
     output_type = "string"
+    help_notes = """ 
+    DatabaseConnect: 
+    A tool that establishes and tests a connection to the Turtle Games SQLite database.
+    Use this to verify database connectivity before attempting to query data.
+    This is useful as a first step when working with database data to ensure the database is accessible.
+
+    Example usage: 
+
+    connection_status = DatabaseConnect().forward()
+    print(connection_status)  # "Successfully connected to database: sqlite:///data/tg_database.db"
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -39,8 +50,25 @@ class QuerySales(Tool):
         "limit": {"type": "integer", "description": "Maximum number of records to return", "optional": True, "nullable": True},
         "order_by": {"type": "string", "description": "Column to sort by (e.g., 'Global_Sales DESC')", "optional": True, "nullable": True}
     }
-
     output_type = "string"
+    help_notes = """ 
+    QuerySales: 
+    A tool that queries the sales data from the Turtle Games database with flexible filtering and column selection.
+    Use this to retrieve and analyze sales data across different platforms, genres, years, and regions.
+
+    Available columns: Product, Ranking, Platform, Year, Genre, Publisher, NA_Sales, EU_Sales, Global_Sales
+
+    Example usage: 
+
+    # Get sales data for Wii platform
+    wii_sales = QuerySales().forward(columns="Platform,Global_Sales", where_column="Platform", where_value="Wii")
+
+    # Get top 10 games from 2009 by sales
+    top_2009_games = QuerySales().forward(columns="*", where_column="Year", where_value="2009", limit=10)
+
+    # Get top 5 genres by global sales
+    top_genres = QuerySales().forward(columns="Genre,Global_Sales", order_by="Global_Sales DESC", limit=5)
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -58,23 +86,6 @@ class QuerySales(Tool):
 
     def forward(self, columns: str = "*", where_column: str = None, where_value: str = None,
                 limit: int = None, order_by: str = None) -> str:
-
-        """
-        Query sales data with flexible filtering and column selection.
-
-        Args:
-            columns: Columns to return, comma-separated or '*' for all
-            where_column: Column name to filter by
-            where_value: Value to filter for
-            limit: Maximum number of records
-            order_by: Column to sort by (can include ASC/DESC)
-
-        Example usage:
-        - query_sales(columns="Platform,Global_Sales", where_column="Platform", where_value="Wii")
-        - query_sales(columns="*", where_column="Year", where_value="2009", limit=10)
-        - query_sales(columns="Genre,Global_Sales", order_by="Global_Sales DESC", limit=5)
-        """
-
         try:
             engine = create_engine('sqlite:///data/tg_database.db')
 
@@ -181,8 +192,26 @@ class QueryReviews(Tool):
         "limit": {"type": "integer", "description": "Maximum number of records to return", "optional": True, "nullable": True},
         "order_by": {"type": "string", "description": "Column to sort by (e.g., 'Global_Sales DESC')", "optional": True, "nullable": True}
     }
-
     output_type = "string"
+    help_notes = """ 
+    QueryReviews: 
+    A tool that queries customer review data from the Turtle Games database with flexible filtering and column selection.
+    Use this to retrieve and analyze customer feedback, demographics, and spending patterns.
+
+    Available columns: gender, age, remuneration (k£), spending_score (1-100), loyalty_points, 
+    education, language, platform, product, review, summary
+
+    Example usage: 
+
+    # Get reviews for PS4 platform
+    ps4_reviews = QueryReviews().forward(columns="platform,age,review", where_column="platform", where_value="PS4")
+
+    # Get reviews from 25-year-old customers
+    young_adult_reviews = QueryReviews().forward(columns="*", where_column="age", where_value="25", limit=5)
+
+    # Get reviews sorted by spending score (highest first)
+    high_spender_reviews = QueryReviews().forward(columns="education,spending_score", order_by="spending_score DESC")
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()

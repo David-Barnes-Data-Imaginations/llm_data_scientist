@@ -1,4 +1,4 @@
-from main import dataframe_store
+from src.shared_state import dataframe_store
 from src.utils.validate_schema import DataValidator
 import pandas as pd
 import numpy as np
@@ -9,22 +9,56 @@ from typing import List, Dict, Any
 from src.client.telemetry import TelemetryManager
 telemetry = TelemetryManager()
 
+class ListVariables(Tool):
+    name = "list_variables"
+    description = "Lists all known global variables and their types. You can use this to help you keep track!"
+    help_notes = """ 
+    ListVariables: 
+    A tool that lists all known global variables in the current environment along with their types.
+    Use this to keep track of what variables are available to you and what type of data they contain.
+    This is especially useful when you need to reference previously created variables or understand the current state.
+
+    Example usage: 
+
+    variables = ListVariables().forward()
+    print(variables)  # Displays all available variables and their types
+    """
+
+    def __init__(self, sandbox=None):
+        super().__init__()
+        self.sandbox = sandbox
+        self.telemetry = TelemetryManager()
+        self.trace = self.telemetry.start_trace("validate_data")
+        self.trace.add_input("")
+        self.trace.end()
+
+    def forward(self) -> str:
+        return "\n".join(f"{k}: {type(v).__name__}" for k, v in globals().items() if not k.startswith("__"))
+
 class ValidateData(Tool):
     name = "validate_data"
     description = "Validates data against a schema and returns cleaned DataFrame and error list."
-    """
-    Example input: 
-    result = ValidateData().forward(chunk=my_df, name="df_validated_chunk1")
-
-    # Agent now wants to drop a column
-    df = dataframe_store["df_validated_chunk1"]
-    df.drop(columns=["bad_col"], inplace=True)
-    """
     inputs = {
         "chunk": {"type": "object", "description": "DataFrame chunk to validate"},
         "name": {"type": "string", "description": "Name to store the cleaned dataframe under", "optional": True},
     }
     output_type = "object"
+    help_notes = """ 
+    ValidateData: 
+    A tool that validates and cleans a DataFrame against a predefined schema, handling duplicates and missing values.
+    The cleaned DataFrame is stored in a global dataframe_store with the provided name for later access.
+    Use this when you need to ensure your data meets specific validation criteria before further processing.
+
+    Example usage: 
+
+    result = ValidateData().forward(chunk=my_df, name="df_validated_chunk1")
+
+    # To access the validated DataFrame later:
+    df = dataframe_store["df_validated_chunk1"]
+
+    # You can then perform operations on the validated DataFrame
+    df.drop(columns=["bad_col"], inplace=True)
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -93,6 +127,23 @@ class AnalyzePatterns(Tool):
         "analysis_type": {"type": str, "description": "Type of analysis to perform (demographic, review_sentiment, spending_patterns, platform_specific)"}
     }
     output_type = "chunk"  # Returns dictionary of analysis results
+    help_notes = """ 
+    AnalyzePatterns: 
+    A tool that performs specialized analysis on data chunks based on the specified analysis type.
+    Use this to extract meaningful patterns and insights from your data, focusing on specific aspects like demographics, 
+    sentiment, spending patterns, or platform-specific trends.
+
+    Example usage: 
+
+    # Analyze demographic patterns
+    chunk = [
+        {'age': 35, 'gender': 'Male', 'education': 'Bachelor', 'spending_score (1-100)': 85},
+        {'age': 28, 'gender': 'Female', 'education': 'Master', 'spending_score (1-100)': 92}
+    ]
+    demographic_patterns = AnalyzePatterns().forward(chunk=chunk, analysis_type='demographic')
+
+    # Other analysis types: 'review_sentiment', 'spending_patterns', 'platform_specific'
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -161,6 +212,26 @@ class CheckDataframe(Tool):
         "chunk": {"type": str, "description": "dataframe to be checked"}
     }
     output_type = str  # Returns success message or raises ValueError
+    help_notes = """ 
+    CheckDataframe: 
+    A tool that validates a DataFrame specifically for machine learning readiness by checking for non-numeric values, NaN values, and infinite values.
+    Use this before applying machine learning algorithms to ensure your data won't cause errors during model training.
+    Unlike InspectDataframe, this tool raises errors if issues are found rather than just reporting them.
+
+    Example usage: 
+
+    try:
+        # Check if DataFrame is ready for ML algorithms
+        chunk = [
+            {'feature1': 10, 'feature2': 20},
+            {'feature1': 30, 'feature2': 40}
+        ]
+        result = CheckDataframe().forward(chunk=chunk)
+        print(result)  # "DataFrame validation passed successfully"
+    except ValueError as e:
+        print(f"Data issue detected: {e}")
+        # Handle the issue (e.g., convert non-numeric data, fill NaN values)
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -212,6 +283,29 @@ class InspectDataframe(Tool):
         "df": {"type": "object", "description": "The DataFrame to inspect and analyze"}
     }
     output_type = "object"  # Returns DataFrame with descriptive statistics
+    help_notes = """ 
+    InspectDataframe: 
+    A tool that provides a comprehensive overview of a pandas DataFrame, including its shape, columns, and descriptive statistics.
+    Use this for exploratory data analysis to understand the structure and content of your data before processing it.
+    Unlike CheckDataframe, this tool focuses on providing information rather than validation.
+
+    Example usage: 
+
+    # Create a sample DataFrame
+    df = pd.DataFrame({
+        'numeric': [1, 2, 3, 4, 5],
+        'categorical': ['A', 'B', 'A', 'C', 'B']
+    })
+
+    # Get comprehensive statistics about the DataFrame
+    stats = InspectDataframe().forward(df=df)
+
+    # The output includes:
+    # - First few rows (from df.head())
+    # - DataFrame shape
+    # - Column names
+    # - Descriptive statistics for all columns (including categorical)
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -247,4 +341,3 @@ class InspectDataframe(Tool):
         # To include categorical columns
         # in the summary statistics, an argument can be added to the describe() method.
         return df.describe(include='all')
-

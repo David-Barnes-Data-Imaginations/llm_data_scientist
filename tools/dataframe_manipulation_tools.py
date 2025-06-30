@@ -26,6 +26,33 @@ class DataframeMelt(Tool):
         "ignore_index": {"type": "boolean", "description": "Reset index in result", "optional": True, "nullable": True},
     }
     output_type = "object"
+    help_notes = """ 
+    DataframeMelt: 
+    A tool that transforms a DataFrame from wide format to long format (also called "unpivoting").
+    Use this when you need to convert columns into rows, which is often required for visualization or certain types of analysis.
+    This is the opposite of pivot operations.
+
+    Example usage: 
+
+    # Create a sample wide-format DataFrame
+    df = pd.DataFrame({
+        'Name': ['John', 'Mary'],
+        'Math': [90, 95],
+        'Science': [85, 92],
+        'History': [75, 88]
+    })
+
+    # Melt the DataFrame to convert subject columns to rows
+    melted_df = DataframeMelt().forward(
+        frame=df,
+        id_vars=['Name'],
+        value_vars=['Math', 'Science', 'History'],
+        var_name='Subject',
+        value_name='Score'
+    )
+
+    # Result will have columns: 'Name', 'Subject', 'Score'
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -66,6 +93,31 @@ class DataframeConcat(Tool):
         "copy": {"type": "boolean", "optional": True, "nullable": True},
     }
     output_type = "object"
+    help_notes = """ 
+    DataframeConcat: 
+    A tool that combines multiple DataFrames into a single DataFrame, either by stacking them vertically (axis=0) or horizontally (axis=1).
+    Use this when you need to combine separate DataFrames that have similar structure.
+
+    Example usage: 
+
+    # Create sample DataFrames
+    df1 = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+    df2 = pd.DataFrame({'A': [5, 6], 'B': [7, 8]})
+
+    # Concatenate vertically (stack rows)
+    vertical_concat = DataframeConcat().forward(
+        objs=[df1, df2],
+        axis=0,
+        ignore_index=True
+    )
+
+    # Concatenate horizontally (join columns)
+    df3 = pd.DataFrame({'C': [9, 10], 'D': [11, 12]})
+    horizontal_concat = DataframeConcat().forward(
+        objs=[df1, df3],
+        axis=1
+    )
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()

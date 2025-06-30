@@ -5,6 +5,7 @@ import pandas as pd
 from main import dataframe_store
 from src.client.telemetry import TelemetryManager
 telemetry = TelemetryManager()
+from main import chunk_number
 
 class CreateDataframe(Tool):
     name = "create_dataframe"

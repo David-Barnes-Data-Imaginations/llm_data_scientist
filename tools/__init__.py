@@ -18,9 +18,8 @@ from .dataframe_storage import CreateDataframe, CopyDataframe
 # Import from documentation_tools.py
 from .documentation_tools import (
     DocumentLearningInsights,
-    EmbedAndStore,
     RetrieveSimilarChunks,
-    ValidateCleaningResults,
+    ValidateCleaningResults, GetToolHelp,
     SaveCleanedDataframe, RetrieveMetadata
 )
 
@@ -30,6 +29,7 @@ __all__ = [
     'AnalyzePatterns',
     'CheckDataframe',
     'InspectDataframe',
+    'GetToolHelp',
     
     # Data structure feature engineering tools
     'OneHotEncode',
@@ -45,7 +45,6 @@ __all__ = [
     
     # Documentation tools
     'DocumentLearningInsights',
-    'EmbedAndStore',
     'RetrieveSimilarChunks',
     'ValidateCleaningResults',
     'SaveCleanedDataframe',

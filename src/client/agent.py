@@ -59,7 +59,7 @@ class ToolFactory:
         # Import your custom tools
         from tools.data_structure_inspection_tools import InspectDataframe, CheckDataframe, AnalyzePatterns
         from tools.database_tools import DatabaseConnect, QuerySales, QueryReviews
-        from tools.documentation_tools import (DocumentLearningInsights, EmbedAndStore,
+        from tools.documentation_tools import (DocumentLearningInsights,
                                                RetrieveMetadata, RetrieveSimilarChunks,
                                                ValidateCleaningResults, SaveCleanedDataframe)
         from tools.data_structure_feature_engineering_tools import (OneHotEncode, ApplyFeatureHashing,

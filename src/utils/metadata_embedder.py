@@ -4,12 +4,11 @@ import numpy as np
 from openai import OpenAI
 import faiss as faiss
 
-
-
 class MetadataEmbedder:
     """Class for embedding metadata and storing them in a sandbox"""
     def __init__(self, sandbox=None):
         self.sandbox = sandbox
+        self.openai_client = OpenAI()
 
         # Separate storage for metadata vs agent notes
         self.metadata_index_path = "embeddings/metadata_index.faiss"
@@ -168,4 +167,5 @@ class MetadataEmbedder:
 
         except Exception as e:
             print(f"Error searching metadata: {e}")
-            return []
+        print(sandbox.files.listdir("/data/metadata"))
+        return []

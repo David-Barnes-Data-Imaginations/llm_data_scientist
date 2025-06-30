@@ -10,6 +10,21 @@ class OneHotEncode(Tool):
         "column": {"type": "string", "description": "Name of the column to encode, if input is a DataFrame", "optional": True}
     }
     output_type = "object"  # Returns DataFrame or np.ndarray
+    help_notes = """ 
+    OneHotEncode: 
+    A tool that converts categorical variables into a binary matrix representation (one-hot encoding).
+    Use this when you need to transform categorical features into a format suitable for machine learning models that require numerical input.
+
+    Example usage: 
+
+    # For DataFrame
+    df = pd.DataFrame({'category': ['A', 'B', 'A', 'C']})
+    encoded_df = OneHotEncode().forward(data=df, column='category')
+
+    # For NumPy array
+    data = np.array(['A', 'B', 'A', 'C'])
+    encoded_array = OneHotEncode().forward(data=data)
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -66,6 +81,21 @@ class ApplyFeatureHashing(Tool):
         "n_features": {"type": "integer", "description": "Number of output features (columns) for the hash space", "optional": True}
     }
     output_type = "object"  # Returns scipy.sparse.csr_matrix
+    help_notes = """ 
+    ApplyFeatureHashing: 
+    A tool that applies the feature hashing technique (the hashing trick) to convert high-dimensional categorical features into a fixed-size feature space.
+    Use this when dealing with high-cardinality categorical features or text data to reduce dimensionality while preserving information.
+
+    Example usage: 
+
+    # For DataFrame
+    df = pd.DataFrame({'feature1': ['A', 'B', 'C'], 'feature2': [1, 2, 3]})
+    hashed_features = ApplyFeatureHashing().forward(data=df, n_features=8)
+
+    # For a list of lists
+    data = [['A', 1], ['B', 2], ['C', 3]]
+    hashed_features = ApplyFeatureHashing().forward(data=data, n_features=8)
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -132,6 +162,20 @@ class SmoteBalance(Tool):
         "random_state": {"type": "integer", "description": "Random seed for reproducibility", "optional": True}
     }
     output_type = "tuple"  # Returns tuple of balanced datasets
+    help_notes = """ 
+    SmoteBalance: 
+    A tool that applies the SMOTE (Synthetic Minority Over-sampling Technique) algorithm to address class imbalance in your dataset.
+    Use this when your target variable has imbalanced classes and you want to generate synthetic samples for the minority class to improve model performance.
+
+    Example usage: 
+
+    # With an imbalanced dataset (4 samples of class 0, 2 samples of class 1)
+    X = pd.DataFrame({'feature1': [1, 2, 3, 4, 5, 6], 'feature2': [7, 8, 9, 10, 11, 12]})
+    y = pd.Series([0, 0, 0, 0, 1, 1])
+
+    # Apply SMOTE to balance the classes
+    X_resampled, y_resampled, X_test, y_test = SmoteBalance().forward(X=X, y=y, test_size=0.3, random_state=42)
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -194,6 +238,22 @@ class CalculateSparsity(Tool):
         "data": {"type": "object", "description": "Input array (can be any shape)"}
     }
     output_type = "float"
+    help_notes = """ 
+    CalculateSparsity: 
+    A tool that calculates the sparsity of a dataset, which is the proportion of elements that are zero.
+    Use this to assess how sparse your data is, which can be important for choosing appropriate algorithms or storage formats.
+    High sparsity (close to 1.0) indicates that most values are zeros.
+
+    Example usage: 
+
+    import numpy as np
+
+    # Create a sparse array where 80% of elements are zero
+    data = np.array([0, 1, 0, 0, 2, 0, 0, 0, 3, 0])
+
+    # Calculate sparsity
+    sparsity = CalculateSparsity().forward(data=data)  # Should return 0.8
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
@@ -238,6 +298,22 @@ class HandleMissingValues(Tool):
         "inplace": {"type": "boolean", "description": "Whether to modify DataFrame in place (default: False)", "optional": True}
     }
     output_type = "object"  # Returns DataFrame
+    help_notes = """ 
+    HandleMissingValues: 
+    A tool that handles missing values (NaN, None) in pandas DataFrames using either interpolation or imputation strategies.
+    Use this during data cleaning to address missing data, which is a common issue in real-world datasets.
+
+    Example usage: 
+
+    # Using interpolation (fills missing values based on surrounding data points)
+    df_cleaned = HandleMissingValues().forward(df=df, method='linear', axis=0)
+
+    # Using mean imputation (replaces missing values with column means)
+    df_cleaned = HandleMissingValues().forward(df=df, fill_strategy='mean')
+
+    # Using a constant value for imputation
+    df_cleaned = HandleMissingValues().forward(df=df, fill_strategy=0)  # Replace NaNs with 0
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()

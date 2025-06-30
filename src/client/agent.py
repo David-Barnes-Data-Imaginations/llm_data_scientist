@@ -98,3 +98,4 @@ class ToolFactory:
             CopyDataframe(sandbox=self.sandbox),
             GetToolHelp(sandbox=self.sandbox),
         ]
+        return tools

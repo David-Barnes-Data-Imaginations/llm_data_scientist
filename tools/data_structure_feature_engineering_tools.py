@@ -6,7 +6,7 @@ class OneHotEncode(Tool):
     description = "One-hot encodes columns in a DataFrame or categories in a NumPy array."
     inputs = {
         "data": {"type": "object", "description": "DataFrame or array-like data to encode"},
-        "column": {"type": "string", "description": "Name of the column to encode, if input is a DataFrame", "optional": True}
+        "column": {"type": "string", "description": "Name of the column to encode, if input is a DataFrame", "optional": True, "nullable": True}
     }
     output_type = "object"  # Returns DataFrame or np.ndarray
     help_notes = """ 
@@ -99,7 +99,7 @@ class ApplyFeatureHashing(Tool):
     description = "Apply feature hashing to the input data."
     inputs = {
         "data": {"type": "object", "description": "An iterable object such as a list of lists, or a pandas DataFrame/Series"},
-        "n_features": {"type": "integer", "description": "Number of output features (columns) for the hash space", "optional": True}
+        "n_features": {"type": "integer", "description": "Number of output features (columns) for the hash space", "optional": True, "nullable": True}
     }
     output_type = "object"  # Returns scipy.sparse.csr_matrix
     help_notes = """ 
@@ -203,8 +203,8 @@ class SmoteBalance(Tool):
     inputs = {
         "X": {"type": "object", "description": "Input features (DataFrame or array-like)"},
         "y": {"type": "object", "description": "Target values (Series or array-like)"},
-        "test_size": {"type": "float", "description": "Proportion of the dataset for testing", "optional": True},
-        "random_state": {"type": "integer", "description": "Random seed for reproducibility", "optional": True}
+        "test_size": {"type": "float", "description": "Proportion of the dataset for testing", "optional": True, "nullable": True},
+        "random_state": {"type": "integer", "description": "Random seed for reproducibility", "optional": True, "nullable": True}
     }
     output_type = "tuple"  # Returns tuple of balanced datasets
     help_notes = """ 
@@ -399,10 +399,10 @@ class HandleMissingValues(Tool):
     description = "Handle Missing Values in a pandas DataFrame using interpolation or various imputation strategies."
     inputs = {
         "df": {"type": "object", "description": "Input DataFrame containing data with missing values"},
-        "method": {"type": "string", "description": "Interpolation method (default: 'linear')", "optional": True},
-        "axis": {"type": "integer", "description": "Axis to interpolate along (default: 0)", "optional": True},
-        "fill_strategy": {"type": "string", "description": "Imputation strategy ('mean', 'median', 'mode', or scalar)", "optional": True},
-        "inplace": {"type": "boolean", "description": "Whether to modify DataFrame in place (default: False)", "optional": True}
+        "method": {"type": "string", "description": "Interpolation method (default: 'linear')", "optional": True, "nullable": True},
+        "axis": {"type": "integer", "description": "Axis to interpolate along (default: 0)", "optional": True, "nullable": True},
+        "fill_strategy": {"type": "string", "description": "Imputation strategy ('mean', 'median', 'mode', or scalar)", "optional": True, "nullable": True},
+        "inplace": {"type": "boolean", "description": "Whether to modify DataFrame in place (default: False)", "optional": True, "nullable": True}
     }
     output_type = "object"  # Returns DataFrame
     help_notes = """ 

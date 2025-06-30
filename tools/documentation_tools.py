@@ -53,7 +53,7 @@ class RetrieveMetadata(Tool):
     description = "Search the dataset metadata for relevant information"
     inputs = {
         "query": {"type": "string", "description": "What to search for in the metadata"},
-        "k": {"type": "integer", "description": "Number of results to return (default: 3)"}
+        "k": {"type": "integer", "description": "Number of results to return (default: 3)", "nullable": True}
     }
     output_type = "string"
     help_notes = """ 
@@ -223,7 +223,7 @@ class RetrieveSimilarChunks(Tool):
         "query": {"type": "string", "description": "The query or current goal the agent is working on"},
         "top_k": {"type": "integer", "description": "Number of top similar chunks to return", "optional": True, "nullable": True}
     }
-    output_type = "list"  # Returns list of dictionaries
+    output_type = "object"  # Returns list of dictionaries
     help_notes = """ 
     RetrieveSimilarChunks: 
     A tool that finds previously documented insights that are semantically similar to your current query.
@@ -295,10 +295,10 @@ class ValidateCleaningResults(Tool):
     description = "Validates cleaning results for a chunk and writes markdown and JSON logs."
     inputs = {
         "chunk_number": {"type": "integer", "description": "The chunk number being validated"},
-        "original_chunk": {"type": "list", "description": "The original data chunk"},
-        "cleaned_chunk": {"type": "list", "description": "The cleaned data chunk"}
+        "original_chunk": {"type": "object", "description": "The original data chunk"},
+        "cleaned_chunk": {"type": "object", "description": "The cleaned data chunk"}
     }
-    output_type = "dict"  # Returns dictionary with validation results
+    output_type = "object"  # Returns dictionary with validation results
     help_notes = """ 
      ValidateCleaningResults: 
      A tool you can use after you have cleaned a chunk, it allows you to check if your dataframe is clean.

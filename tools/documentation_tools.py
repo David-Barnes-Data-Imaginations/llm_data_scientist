@@ -37,7 +37,7 @@ class GetToolHelp(Tool):
         self.sandbox = sandbox
         self.telemetry = TelemetryManager()
         self.trace = self.telemetry.start_trace("GetToolHelp")
-        self.trace.end()
+        self.trace.finish()()
 
     def forward(self, tool_name: str) -> str:
         # Dynamically check all tool classes you registered
@@ -76,7 +76,9 @@ class RetrieveMetadata(Tool):
         self.trace.add_input("query", "What to search for in the metadata")
         self.trace.add_input("k", "Number of results to return (default: 3)")
         self.trace.add_output("results", "Relevant metadata chunks")
-        self.trace.end()
+        self.trace.finish()()
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.openai_client = OpenAI(api_key=openai_api_key)
 
     def forward(self, query: str, k: int = 3) -> str:
         """
@@ -123,7 +125,8 @@ class DocumentLearningInsights(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-        self.openai_client = OpenAI()
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.openai_client = OpenAI(api_key=openai_api_key)
 
         # File paths
         self.agent_notes_index_path = "embeddings/agent_notes_index.faiss"
@@ -133,7 +136,7 @@ class DocumentLearningInsights(Tool):
         self.trace = self.telemetry.start_trace("document_learning_insights")
         self.trace.add_input("notes", "The agent's reflections on the current chunk")
         self.trace.add_output("confirmation", "Confirmation message including the assigned chunk number")
-        self.trace.end()
+        self.trace.finish()()
 
     def forward(self, notes: str) -> str:
         from src.shared_state import chunk_number
@@ -235,13 +238,14 @@ class RetrieveSimilarChunks(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-        self.openai_client = OpenAI()
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.openai_client = OpenAI(api_key=openai_api_key)
         self.telemetry = TelemetryManager()
         self.trace = self.telemetry.start_trace("retrieve_similar_chunks")
         self.trace.add_input("query", "The query or current goal the agent is working on")
         self.trace.add_input("top_k", "Number of top similar chunks to return")
         self.trace.add_output("results", "List of dictionaries with chunk information")
-        self.trace.end()
+        self.trace.finish()()
 
     def forward(self, query: str, top_k: int = 3) -> list:
         """
@@ -253,7 +257,8 @@ class RetrieveSimilarChunks(Tool):
             list of dict: Each item contains { "chunk": int, "notes": str }
         """
         if not self.sandbox:
-            return "Error: Sandbox not available"
+            return 1
+            "Error: Sandbox not available"
 
         # Embed the query
         response = self.openai_client.embeddings.create(
@@ -314,7 +319,7 @@ class ValidateCleaningResults(Tool):
         self.trace.add_input("original_chunk", "The original data chunk")
         self.trace.add_input("cleaned_chunk", "The cleaned data chunk")
         self.trace.add_output("validation_results", "Dictionary with validation results")
-        self.trace.end()
+        self.trace.finish()()
 
     def forward(self, chunk_number: int, original_chunk: list[dict], cleaned_chunk: list[dict]) -> dict:
         """
@@ -394,7 +399,7 @@ class SaveCleanedDataframe(Tool):
         self.trace.add_input("df", "The cleaned DataFrame")
         self.trace.add_input("filename", "File name for the CSV output")
         self.trace.add_output("confirmation", "Confirmation message")
-        self.trace.end()
+        self.trace.finish()()
 
     def forward(self, df: pd.DataFrame, filename: str = "tg_reviews_cleaned.csv") -> str:
         """

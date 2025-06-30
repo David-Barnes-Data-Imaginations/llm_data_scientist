@@ -8,7 +8,7 @@ import os
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 from a_mcp_versions.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
-from .metadata_embedder import MetadataEmbedder, embed_tool_help_notes
+from .metadata_embedder import MetadataEmbedder
 from .ollama_utils import (
     check_ollama_server,
     wait_for_ollama_server,
@@ -24,6 +24,5 @@ __all__ = [
     'TCA_SYSTEM_PROMPT',
     'TCA_MAIN_PROMPT',
     'CHAT_PROMPT',
-    'MetadataEmbedder',
-    'embed_tool_help_notes'
+    'MetadataEmbedder'
 ]

@@ -57,24 +57,28 @@ class ToolFactory:
         """Create all tools with sandbox and metadata_embedder dependencies injected"""
 
         # Import your custom tools
-        from tools.data_structure_inspection_tools import InspectDataframe, CheckDataframe, AnalyzePatterns
+        from tools.data_structure_inspection_tools import InspectDataframe, CheckDataframe, AnalyzePatterns, ValidateData
         from tools.database_tools import DatabaseConnect, QuerySales, QueryReviews
         from tools.documentation_tools import (DocumentLearningInsights,
                                                RetrieveMetadata, RetrieveSimilarChunks,
-                                               ValidateCleaningResults, SaveCleanedDataframe)
-        from tools.data_structure_feature_engineering_tools import (OneHotEncode, ApplyFeatureHashing,
+                                               ValidateCleaningResults, SaveCleanedDataframe, GetToolHelp)
+        from tools.data_structure_feature_engineering_tools import (OneHotEncode, ApplyFeatureHashing, SmoteBalance,
                                                                     CalculateSparsity, HandleMissingValues)
+        from tools.dataframe_manipulation_tools import DataframeMelt, DataframeConcat, DataframeDrop, DataframeFill, DataframeMerge, DataframeToNumeric
+        from tools.dataframe_storage import CreateDataframe, CopyDataframe
+
+
 
         # Create instances of your custom tools
         tools = [
             DatabaseConnect(sandbox=self.sandbox, ),
             QuerySales(sandbox=self.sandbox),
             QueryReviews(sandbox=self.sandbox),
+            ValidateData(sandbox=self.sandbox),
             CheckDataframe(sandbox=self.sandbox),
             InspectDataframe(sandbox=self.sandbox),
             AnalyzePatterns(sandbox=self.sandbox),
             DocumentLearningInsights(sandbox=self.sandbox),
-            EmbedAndStore(sandbox=self.sandbox),
             RetrieveMetadata(sandbox=self.sandbox, metadata_embedder=self.metadata_embedder),
             RetrieveSimilarChunks(sandbox=self.sandbox),
             ValidateCleaningResults(sandbox=self.sandbox),
@@ -82,7 +86,15 @@ class ToolFactory:
             OneHotEncode(sandbox=self.sandbox),
             ApplyFeatureHashing(sandbox=self.sandbox),
             CalculateSparsity(sandbox=self.sandbox),
-            HandleMissingValues(sandbox=self.sandbox)
+            HandleMissingValues(sandbox=self.sandbox),
+            SmoteBalance(sandbox=self.sandbox),
+            DataframeMelt(sandbox=self.sandbox),
+            DataframeConcat(sandbox=self.sandbox),
+            DataframeDrop(sandbox=self.sandbox),
+            DataframeFill(sandbox=self.sandbox),
+            DataframeMerge(sandbox=self.sandbox),
+            DataframeToNumeric(sandbox=self.sandbox),
+            CreateDataframe(sandbox=self.sandbox),
+            CopyDataframe(sandbox=self.sandbox),
+            GetToolHelp(sandbox=self.sandbox),
         ]
-
-        return tools

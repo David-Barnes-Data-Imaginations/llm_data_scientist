@@ -6,7 +6,7 @@ from src.utils.metadata_embedder import MetadataEmbedder
 from src.client.agent import ToolFactory, CustomAgent
 from src.client.ui.chat import GradioUI
 from src.utils.ollama_utils import wait_for_ollama_server, start_ollama_server_background, pull_model
-from openai import OpenAI
+from dotenv import load_dotenv
 
 HF_TOKEN = os.getenv('HF_TOKEN')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -16,8 +16,9 @@ LANGFUSE_AUTH=base64.b64encode(f"{LANGFUSE_PUBLIC_KEY}:{LANGFUSE_SECRET_KEY}".en
 import pandas as pd
 from typing import Dict
 from src.shared_state import chunk_number
-from dotenv import load_dotenv
 from src.shared_state import dataframe_store
+# Get API key from host env
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "https://cloud.langfuse.com/api/public/otel" # EU data region
 os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Basic {LANGFUSE_AUTH}"
@@ -36,10 +37,16 @@ def main():
     with open("./src/data/metadata/turtle_games_dataset_metadata.md", "r") as f:
         metadata_path_in_sandbox = sandbox.files.write("/data/metadata/turtle_games_dataset_metadata.md", f)
 
+    # Pass it into the sandbox properly
+    # (important: `export` here is shell-scoped and not enough on its own)
+    sandbox.commands.run(f"echo 'OPENAI_API_KEY={openai_api_key}' >> ~/.bashrc")
+    sandbox.commands.run(f"export OPENAI_API_KEY={openai_api_key}")
+    sandbox.commands.run("echo OPENAI_API_KEY is set as: $OPENAI_API_KEY")
     # Install required packages in sandbox
     sandbox.commands.run("pip install smolagents faiss-cpu openai numpy sqlalchemy pandas imbalanced-learn")
 
-    # Initialize metadata embedder and embed metadata file
+
+# Initialize metadata embedder and embed metadata file
     print("📚 Setting up metadata embeddings...")
     metadata_embedder = MetadataEmbedder(sandbox)
     result = metadata_embedder.embed_metadata_file("/data/metadata/turtle_games_dataset_metadata.md")

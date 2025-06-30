@@ -29,7 +29,7 @@ __all__ = [
     'AnalyzePatterns',
     'CheckDataframe',
     'InspectDataframe',
-    'GetToolHelp',
+
     
     # Data structure feature engineering tools
     'OneHotEncode',
@@ -49,6 +49,7 @@ __all__ = [
     'ValidateCleaningResults',
     'SaveCleanedDataframe',
     'RetrieveMetadata',
+    'GetToolHelp',
 
     # Dataframe Manipulation Tools
     'DataframeMelt',

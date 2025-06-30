@@ -1,7 +1,6 @@
 from smolagents import Tool
 from src.client.telemetry import TelemetryManager
 
-# functions from my pip library to be turned into tools depending on which functions i choose:
 class OneHotEncode(Tool):
     name = "one_hot_encode"
     description = "One-hot encodes columns in a DataFrame or categories in a NumPy array."
@@ -29,16 +28,9 @@ class OneHotEncode(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-
         self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("one_hot_encode")
-        self.trace.add_input("data", "DataFrame or array-like data to encode")
-        self.trace.add_input("column", "Name of the column to encode, if input is a DataFrame")
-        self.trace.add_output("encoded_data", "DataFrame or np.ndarray with one-hot features")
-        self.trace.end()
 
     def forward(self, data, column=None):
-
         """
         Args:
             data (DataFrame or array-like): Input data to encode.
@@ -46,33 +38,62 @@ class OneHotEncode(Tool):
 
         Returns:
             DataFrame or np.ndarray: Encoded data with one-hot features.
-
-        Example input:
-        # For DataFrame
-        data = pd.DataFrame({'category': ['A', 'B', 'A', 'C']})
-        column = 'category'
-
-        # For NumPy array
-        data = np.array(['A', 'B', 'A', 'C'])
         """
-        from sklearn.preprocessing import OneHotEncoder
-        import pandas as pd
-        import numpy as np
+        # Start telemetry trace
+        trace = self.telemetry.start_trace("one_hot_encode", {
+            "data_type": str(type(data).__name__),
+            "column": column
+        })
 
-        if isinstance(data, pd.DataFrame):
-            if column is None:
-                raise ValueError("Column name must be specified for a pandas DataFrame.")
-            return pd.get_dummies(data, columns=[column])
+        try:
+            from sklearn.preprocessing import OneHotEncoder
+            import pandas as pd
+            import numpy as np
 
-        elif isinstance(data, (np.ndarray, list)):
-            encoder = OneHotEncoder(sparse_output=False)  # Non-sparse array
-            data = np.array(data).reshape(-1, 1)  # Ensures data is 2D
-            return encoder.fit_transform(data)
+            result = None
 
-        else:
-            raise ValueError("Input must be either a pandas DataFrame or a NumPy array.")
-        pass
+            if isinstance(data, pd.DataFrame):
+                if column is None:
+                    raise ValueError("Column name must be specified for a pandas DataFrame.")
 
+                self.telemetry.log_event(trace, "processing", {
+                    "step": "dataframe_encoding",
+                    "column": column,
+                    "shape": data.shape
+                })
+
+                result = pd.get_dummies(data, columns=[column])
+
+            elif isinstance(data, (np.ndarray, list)):
+                self.telemetry.log_event(trace, "processing", {
+                    "step": "array_encoding",
+                    "data_length": len(data)
+                })
+
+                encoder = OneHotEncoder(sparse_output=False)
+                data_array = np.array(data).reshape(-1, 1)
+                result = encoder.fit_transform(data_array)
+
+            else:
+                raise ValueError("Input must be either a pandas DataFrame or a NumPy array.")
+
+            # Log success
+            self.telemetry.log_event(trace, "success", {
+                "output_shape": str(result.shape) if hasattr(result, 'shape') else str(len(result))
+            })
+
+            return result
+
+        except Exception as e:
+            # Log error
+            self.telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            # Always finish the trace
+            self.telemetry.finish_trace(trace)
 class ApplyFeatureHashing(Tool):
     name = "apply_feature_hashing"
     description = "Apply feature hashing to the input data."
@@ -101,13 +122,6 @@ class ApplyFeatureHashing(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("apply_feature_hashing")
-        self.trace.add_input("data", "An iterable object such as a list of lists, or a pandas DataFrame/Series")
-        self.trace.add_input("n_features", "Number of output features (columns) for the hash space")
-        self.trace.add_output("hashed_features", "Transformed data with hashed features")
-        self.trace.end()
-
     def forward(self, data, n_features=10):
         """
         Args:
@@ -127,30 +141,61 @@ class ApplyFeatureHashing(Tool):
         data = [['A', 1], ['B', 2], ['C', 3]]
         n_features = 8
         """
-        from sklearn.feature_extraction import FeatureHasher
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("apply_feature_hashing", {
+            "data_type": str(type(data).__name__),
+            "n_features": n_features
+        })
 
-        # Convert data into a list of dictionaries
-        # Works for both DataFrame and list of lists
-        import pandas as pd
-        if isinstance(data, pd.DataFrame):
-            data_dict = data.to_dict(orient="records")
-        elif isinstance(data, list):
-            data_dict = [
-                {f"feature_{i}": val for i, val in enumerate(row)}
-                for row in data
-            ]
-        else:
-            raise ValueError("Input data must be a pandas DataFrame or a list of lists.")
+        try:
+            from sklearn.feature_extraction import FeatureHasher
+            import pandas as pd
 
-        # Initialize the FeatureHasher
-        hasher = FeatureHasher(n_features=n_features, input_type="dict")
+            # Convert data into a list of dictionaries
+            # Works for both DataFrame and list of lists
+            if isinstance(data, pd.DataFrame):
+                telemetry.log_event(trace, "processing", {
+                    "step": "dataframe_conversion",
+                    "shape": data.shape
+                })
+                data_dict = data.to_dict(orient="records")
 
-        # Transform data to a hashed feature space
-        hashed_features = hasher.transform(data_dict)
+            elif isinstance(data, list):
+                telemetry.log_event(trace, "processing", {
+                    "step": "list_conversion",
+                    "length": len(data)
+                })
+                data_dict = [
+                    {f"feature_{i}": val for i, val in enumerate(row)}
+                    for row in data
+                ]
+            else:
+                raise ValueError("Input data must be a pandas DataFrame or a list of lists.")
 
-        # Return the sparse matrix result
-        return hashed_features
+            # Initialize the FeatureHasher
+            hasher = FeatureHasher(n_features=n_features, input_type="dict")
 
+            # Transform data to a hashed feature space
+            hashed_features = hasher.transform(data_dict)
+
+            # Log success
+            telemetry.log_event(trace, "success", {
+                "output_shape": str(hashed_features.shape) if hasattr(hashed_features, 'shape') else "unknown"
+            })
+
+            # Return the sparse matrix result
+            return hashed_features
+
+        except Exception as e:
+            # Log error
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            # Always finish the trace
+            telemetry.finish_trace(trace)
 
 class SmoteBalance(Tool):
     name = "smote_balance"
@@ -181,15 +226,6 @@ class SmoteBalance(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("smote_balance")
-        self.trace.add_input("X", "Input features (DataFrame or array-like)")
-        self.trace.add_input("y", "Target values (Series or array-like)")
-        self.trace.add_input("test_size", "Proportion of the dataset for testing")
-        self.trace.add_input("random_state", "Random seed for reproducibility")
-        self.trace.add_output("balanced_datasets", "Tuple containing balanced training data and original test data")
-        self.trace.end()
-
     def forward(self, X, y, test_size=0.3, random_state=42):
         """
         Args:
@@ -210,25 +246,62 @@ class SmoteBalance(Tool):
         y = pd.Series([0, 0, 0, 0, 1, 1])
         # Imbalanced classes (4 samples of class 0, 2 samples of class 1)
         """
-        # Modular imports
-        from imblearn.over_sampling import SMOTE
-        from sklearn.model_selection import train_test_split
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("smote_balance", {
+            "X_type": str(type(X).__name__),
+            "y_type": str(type(y).__name__),
+            "test_size": test_size,
+            "random_state": random_state
+        })
 
-        smote = SMOTE(random_state=random_state)
+        try:
+            # Modular imports
+            from imblearn.over_sampling import SMOTE
+            from sklearn.model_selection import train_test_split
+            import pandas as pd
 
-        # Split the data into train and test sets
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
+            telemetry.log_event(trace, "processing", {
+                "step": "data_splitting",
+                "X_shape": str(X.shape) if hasattr(X, 'shape') else "unknown"
+            })
 
-        # Apply SMOTE to the training set
-        X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
+            # Split the data into train and test sets
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
 
-        # Convert outputs into pandas DataFrame if X is a DataFrame
-        import pandas as pd
-        if isinstance(X, pd.DataFrame):
-            X_resampled = pd.DataFrame(data=X_resampled, columns=X.columns)
-            y_resampled = pd.Series(data=y_resampled, name=y.name if hasattr(y, "name") else "target")
+            telemetry.log_event(trace, "processing", {
+                "step": "applying_smote",
+                "X_train_shape": str(X_train.shape) if hasattr(X_train, 'shape') else "unknown"
+            })
 
-        return X_resampled, y_resampled, X_test, y_test
+            # Initialize SMOTE
+            smote = SMOTE(random_state=random_state)
+
+            # Apply SMOTE to the training set
+            X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
+
+            # Convert outputs into pandas DataFrame if X is a DataFrame
+            if isinstance(X, pd.DataFrame):
+                X_resampled = pd.DataFrame(data=X_resampled, columns=X.columns)
+                y_resampled = pd.Series(data=y_resampled, name=y.name if hasattr(y, "name") else "target")
+
+            # Log success
+            telemetry.log_event(trace, "success", {
+                "X_resampled_shape": str(X_resampled.shape) if hasattr(X_resampled, 'shape') else "unknown",
+                "y_resampled_length": len(y_resampled) if hasattr(y_resampled, '__len__') else "unknown"
+            })
+
+            return X_resampled, y_resampled, X_test, y_test
+
+        except Exception as e:
+            # Log error
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            # Always finish the trace
+            telemetry.finish_trace(trace)
 
 
 class CalculateSparsity(Tool):
@@ -259,12 +332,6 @@ class CalculateSparsity(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("calculate_sparsity")
-        self.trace.add_input("data", "Input array (can be any shape)")
-        self.trace.add_output("sparsity", "Sparsity as a proportion of zero elements (0 to 1)")
-        self.trace.end()
-
     def forward(self, data: object) -> float:
         """
         Calculate and return the sparsity of the given 'data'.
@@ -277,15 +344,55 @@ class CalculateSparsity(Tool):
         Returns:
             float: Sparsity as a proportion of zero elements (0 to 1).
         """
-        import numpy as np
-        if isinstance(data, np.ndarray):
-            total_elements = data.size
-            if total_elements == 0:  # Prevent division by zero
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("calculate_sparsity", {
+            "data_type": str(type(data).__name__)
+        })
+
+        try:
+            import numpy as np
+
+            if isinstance(data, np.ndarray):
+                total_elements = data.size
+
+                telemetry.log_event(trace, "processing", {
+                    "step": "calculating_sparsity",
+                    "total_elements": total_elements
+                })
+
+                if total_elements == 0:  # Prevent division by zero
+                    telemetry.log_event(trace, "warning", {
+                        "message": "Empty array detected, returning 0.0"
+                    })
+                    return 0.0
+
+                num_zeros = np.count_nonzero(data == 0)
+                sparsity = num_zeros / total_elements
+
+                # Log success
+                telemetry.log_event(trace, "success", {
+                    "sparsity": sparsity,
+                    "num_zeros": num_zeros,
+                    "total_elements": total_elements
+                })
+
+                return sparsity
+            else:
+                telemetry.log_event(trace, "warning", {
+                    "message": "Input is not a numpy array, returning 0.0"
+                })
                 return 0.0
-            num_zeros = np.count_nonzero(data == 0)
-            sparsity = num_zeros / total_elements
-            return sparsity
-        return 0.0
+
+        except Exception as e:
+            # Log error
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            # Always finish the trace
+            telemetry.finish_trace(trace)
 
 class HandleMissingValues(Tool):
     name = "HandleMissingValues"
@@ -319,16 +426,6 @@ class HandleMissingValues(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("handle_missing_values")
-        self.trace.add_input("df", "Input DataFrame containing data with missing values")
-        self.trace.add_input("method", "Interpolation method (default: 'linear')")
-        self.trace.add_input("axis", "Axis to interpolate along (default: 0)")
-        self.trace.add_input("fill_strategy", "Imputation strategy ('mean', 'median', 'mode', or scalar)")
-        self.trace.add_input("inplace", "Whether to modify DataFrame in place (default: False)")
-        self.trace.add_output("df", "DataFrame with missing values handled")
-        self.trace.end()
-
     def forward(self, df, method='linear', axis=0, fill_strategy=None, inplace=False):
         """
         Args:
@@ -357,11 +454,33 @@ class HandleMissingValues(Tool):
         Replacing with a Scalar:
         df_copy = handle_missing_values(df_copy, fill_strategy=0)  # Replace NaNs with 0
         """
-        if not inplace:
-            df = df.copy()  # Avoid modifying the original DataFrame
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("handle_missing_values", {
+            "method": method,
+            "axis": axis,
+            "fill_strategy": str(fill_strategy),
+            "inplace": inplace
+        })
 
         try:
+            import pandas as pd
+
+            # Log initial state
+            telemetry.log_event(trace, "processing", {
+                "step": "initial_state",
+                "df_shape": str(df.shape) if hasattr(df, 'shape') else "unknown",
+                "missing_values_count": str(df.isna().sum().sum()) if hasattr(df, 'isna') else "unknown"
+            })
+
+            if not inplace:
+                df = df.copy()  # Avoid modifying the original DataFrame
+
             if fill_strategy is not None:
+                telemetry.log_event(trace, "processing", {
+                    "step": "imputation",
+                    "strategy": str(fill_strategy)
+                })
+
                 # Handle imputation based on the provided strategy
                 if fill_strategy == 'mean':
                     df.fillna(df.mean(), inplace=True)
@@ -369,14 +488,34 @@ class HandleMissingValues(Tool):
                     df.fillna(df.median(), inplace=True)
                 elif fill_strategy == 'mode':
                     for col in df.columns:
-                        df[col].fillna(df[col].mode()[0], inplace=True)
+                        df[col].fillna(df[col].mode()[0] if not df[col].mode().empty else None, inplace=True)
                 else:
                     # Assume fill_strategy is a scalar value
                     df.fillna(fill_strategy, inplace=True)
             else:
+                telemetry.log_event(trace, "processing", {
+                    "step": "interpolation",
+                    "method": method,
+                    "axis": axis
+                })
+
                 # Use interpolation to handle missing values
                 df.interpolate(method=method, axis=axis, inplace=True)
-        except Exception as e:
-            raise ValueError(f"Error handling missing values: {e}")
 
-        return df
+            # Log final state
+            telemetry.log_event(trace, "success", {
+                "remaining_missing_values": str(df.isna().sum().sum()) if hasattr(df, 'isna') else "unknown"
+            })
+
+            return df
+
+        except Exception as e:
+            # Log error
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise ValueError(f"Error handling missing values: {e}")
+        finally:
+            # Always finish the trace
+            telemetry.finish_trace(trace)

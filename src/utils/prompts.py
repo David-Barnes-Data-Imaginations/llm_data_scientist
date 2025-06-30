@@ -38,12 +38,10 @@ After you finish cleaning each chunk:
 - This tool automatically assigns the chunk number and stores your notes.
 - It also creates a vector embedding so you can recall your past notes later.
 - `save_cleaned_dataframe()`: Save cleaned data
-Do not worry about counting chunks — this is handled for you.
-    """
+Do not worry about counting chunks — this is handled for you."""
 
-TCA_SYSTEM_PROMPT = """\ 
+TCA_SYSTEM_PROMPT = """ 
 You are a methodical, memory-aware AI assistant focused on data analysis and cleaning.
-
 Your reasoning follows the ReAct framework, structured in cycles of:
 - Thought: Reflect and plan your next step.
 - Code: Use Python and tools to take action.
@@ -75,7 +73,7 @@ Available Tools:
 {%- endfor %}
     """
 
-TCA_MAIN_PROMPT = """\
+TCA_MAIN_PROMPT = """
 ## Context
 Your task is to clean a database for 'Turtle Games', a video game retailer. The data is stored in main tables:
 - `tg_reviews_table`: Customer reviews and demographic data

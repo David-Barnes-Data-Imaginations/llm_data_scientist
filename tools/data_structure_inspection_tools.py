@@ -27,13 +27,31 @@ class ListVariables(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("validate_data")
-        self.trace.add_input("")
-        self.trace.end()
 
     def forward(self) -> str:
-        return "\n".join(f"{k}: {type(v).__name__}" for k, v in globals().items() if not k.startswith("__"))
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("list_variables", {})
+
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "listing_variables"
+            })
+
+            variables = {k: type(v).__name__ for k, v in globals().items() if not k.startswith("__")}
+
+            telemetry.log_event(trace, "success", {
+                "variables_count": len(variables)
+            })
+
+            return "\n".join(f"{k}: {v}" for k, v in variables.items())
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)
 
 class ValidateData(Tool):
     name = "validate_data"
@@ -64,24 +82,23 @@ class ValidateData(Tool):
         super().__init__()
         self.sandbox = sandbox
         self.cleaning_stats: Dict[str, Any] = {}
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("validate_data")
-        self.trace.add_input("chunk", "DataFrame chunk to validate")
-        self.trace.add_input("name", "Name to store the cleaned dataframe under", optional=True)
-        self.trace.add_output("stored_as", "Name to store the cleaned dataframe under")
-        self.trace.add_output("shape", "Shape of the cleaned dataframe")
-        self.trace.add_output("validation_errors", "List of errors encountered during validation")
-        self.trace.add_output("stats", "Cleaning statistics")
-        self.trace.end()
 
-    def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
+    def clean_data(self, df: pd.DataFrame, trace=None, telemetry=None) -> pd.DataFrame:
+        if telemetry and trace:
+            telemetry.log_event(trace, "processing", {
+                "step": "cleaning_data",
+                "initial_rows": len(df)
+            })
+
         initial_rows = len(df)
         df = df.drop_duplicates()
         self.cleaning_stats['duplicates_removed'] = initial_rows - len(df)
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("clean_data")
-        self.trace.add_input("df", "DataFrame chunk to validate")
-        self.trace.end()
+
+        if telemetry and trace:
+            telemetry.log_event(trace, "processing", {
+                "step": "handling_missing_values",
+                "duplicates_removed": initial_rows - len(df)
+            })
 
         # Handle missing values
         numeric_columns = df.select_dtypes(include=[np.number]).columns
@@ -89,35 +106,77 @@ class ValidateData(Tool):
 
         string_columns = df.select_dtypes(include=['object']).columns
         df[string_columns] = df[string_columns].fillna('Unknown')
+
+        if telemetry and trace:
+            telemetry.log_event(trace, "processing", {
+                "step": "data_cleaning_complete",
+                "rows_after_cleaning": len(df)
+            })
+
         return df
 
     def forward(self, chunk: pd.DataFrame, name: str = "validated_df") -> Dict[str, Any]:
-        df = pd.DataFrame(chunk)
-        df_clean = self.clean_data(df)
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("validate_data", {
+            "chunk_type": str(type(chunk).__name__),
+            "name": name
+        })
 
-        valid_rows: List[Dict] = []
-        errors: List[Dict] = []
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "initializing_validation",
+                "chunk_shape": str(chunk.shape) if hasattr(chunk, 'shape') else "unknown"
+            })
 
-        for idx, row in df_clean.iterrows():
-            try:
-                validated_row = DataValidator(**row.to_dict())
-                valid_rows.append(validated_row.model_dump())
-            except ValidationError as e:
-                errors.append({'row': idx, 'errors': str(e)})
+            df = pd.DataFrame(chunk)
+            df_clean = self.clean_data(df, trace, telemetry)
 
-        self.cleaning_stats['validation_errors'] = len(errors)
+            telemetry.log_event(trace, "processing", {
+                "step": "validating_rows"
+            })
 
-        # Store cleaned validated df
-        result_df = pd.DataFrame(valid_rows)
-        dataframe_store[name] = result_df
+            valid_rows: List[Dict] = []
+            errors: List[Dict] = []
 
-        return f"✅ Created DataFrame '{name}' with shape {df.shape}"
-        {
-            'stored_as': name,
-            'shape': dataframe_store[result_df].shape,
-            'validation_errors': errors,
-            'stats': self.cleaning_stats
-        }
+            for idx, row in df_clean.iterrows():
+                try:
+                    validated_row = DataValidator(**row.to_dict())
+                    valid_rows.append(validated_row.model_dump())
+                except ValidationError as e:
+                    errors.append({'row': idx, 'errors': str(e)})
+
+            self.cleaning_stats['validation_errors'] = len(errors)
+
+            telemetry.log_event(trace, "processing", {
+                "step": "storing_result",
+                "valid_rows": len(valid_rows),
+                "errors": len(errors)
+            })
+
+            # Store cleaned validated df
+            result_df = pd.DataFrame(valid_rows)
+            dataframe_store[name] = result_df
+
+            telemetry.log_event(trace, "success", {
+                "stored_as": name,
+                "result_shape": str(result_df.shape) if hasattr(result_df, 'shape') else "unknown",
+                "validation_errors": len(errors)
+            })
+
+            return {
+                'stored_as': name,
+                'shape': result_df.shape,
+                'validation_errors': errors,
+                'stats': self.cleaning_stats
+            }
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)
 
 class AnalyzePatterns(Tool):
     name = "analyze_patterns"
@@ -149,14 +208,12 @@ class AnalyzePatterns(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("analyze_patterns")
-        self.trace.add_input("chunk", "object containing the data")
-        self.trace.add_input("analysis_type", "Type of analysis to perform (demographic, review_sentiment, spending_patterns, platform_specific)")
-        self.trace.add_output("patterns", "Dictionary of analysis results")
-        self.trace.end()
-
     def forward(self, chunk: str, analysis_type: str) -> dict:
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("analyze_patterns", {
+            "chunk_type": str(type(chunk).__name__),
+            "analysis_type": analysis_type
+        })
         """
         Args:
             chunk : String containing the data
@@ -240,7 +297,7 @@ class CheckDataframe(Tool):
         self.trace = self.telemetry.start_trace("check_dataframe")
         self.trace.add_input("chunk", "dataframe to be checked")
         self.trace.add_output("success_message", "success message if no issues are found")
-        self.trace.end()
+        self.trace.finish()()
 
     def forward(self, chunk: object) -> str:
         """
@@ -314,7 +371,7 @@ class InspectDataframe(Tool):
         self.trace = self.telemetry.start_trace("inspect_dataframe")
         self.trace.add_input("df", "The DataFrame to inspect and analyze")
         self.trace.add_output("descriptive_statistics", "A DataFrame containing descriptive statistics for all columns, generated by pandas' describe() method with include='all'")
-        self.trace.end()
+        self.trace.finish()()
 
     def forward(self, df):
         """

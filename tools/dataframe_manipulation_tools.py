@@ -58,20 +58,34 @@ class DataframeMelt(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("dataframe_melt")
-        self.trace.add_input("frame", "DataFrame to melt")
-        self.trace.add_input("id_vars", "Identifier columns")
-        self.trace.add_input("value_vars", "Columns to unpivot")
-        self.trace.add_input("var_name", "Name of variable column")
-        self.trace.add_input("value_name", "Name of value column")
-        self.trace.add_input("col_level", "MultiIndex column level")
-        self.trace.add_input("ignore_index", "Reset index in result")
-        self.trace.add_output("melted_df", "Melted DataFrame")
-        self.trace.end()
-
     def forward(self, frame, **kwargs):
-        return pd.melt(frame, **kwargs)
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("dataframe_melt", {
+            "frame_type": str(type(frame).__name__),
+            "kwargs": str(kwargs)
+        })
+
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "melting_dataframe",
+                "frame_shape": str(frame.shape) if hasattr(frame, 'shape') else "unknown"
+            })
+
+            result = pd.melt(frame, **kwargs)
+
+            telemetry.log_event(trace, "success", {
+                "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
+            })
+
+            return result
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)
 
 
 # =====================================
@@ -123,17 +137,34 @@ class DataframeConcat(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("dataframe_concat")
-        self.trace.add_input("objs", "List of DataFrames to concatenate")
-        self.trace.add_input("axis", "Axis to concatenate along")
-        self.trace.add_input("join", "How to handle indexes")
-        self.trace.add_input("ignore_index", "Whether to ignore index values")
-        self.trace.add_output("concatenated_df", "Concatenated DataFrame")
-        self.trace.end()
-
     def forward(self, objs, **kwargs):
-        return pd.concat(objs, **kwargs)
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("dataframe_concat", {
+            "objs_count": len(objs) if hasattr(objs, '__len__') else "unknown",
+            "kwargs": str(kwargs)
+        })
+
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "concatenating_dataframes",
+                "objs_types": str([type(obj).__name__ for obj in objs]) if hasattr(objs, '__iter__') else "unknown"
+            })
+
+            result = pd.concat(objs, **kwargs)
+
+            telemetry.log_event(trace, "success", {
+                "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
+            })
+
+            return result
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)
 
 
 # =====================================
@@ -158,22 +189,39 @@ class DataframeDrop(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("dataframe_drop")
-        self.trace.add_input("df", "DataFrame to modify")
-        self.trace.add_input("labels", "Labels to drop")
-        self.trace.add_input("axis", "Axis to drop from")
-        self.trace.add_input("index", "Index labels to drop")
-        self.trace.add_input("columns", "Column labels to drop")
-        self.trace.add_input("inplace", "Whether to modify DataFrame in place")
-        self.trace.add_output("modified_df", "Modified DataFrame")
-        self.trace.end()
-
     def forward(self, df, inplace=False, **kwargs):
-        if inplace:
-            df.drop(inplace=True, **kwargs)
-            return df
-        return df.drop(**kwargs)
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("dataframe_drop", {
+            "df_type": str(type(df).__name__),
+            "inplace": inplace,
+            "kwargs": str(kwargs)
+        })
+
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "dropping_from_dataframe",
+                "df_shape_before": str(df.shape) if hasattr(df, 'shape') else "unknown"
+            })
+
+            if inplace:
+                df.drop(inplace=True, **kwargs)
+                result = df
+            else:
+                result = df.drop(**kwargs)
+
+            telemetry.log_event(trace, "success", {
+                "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
+            })
+
+            return result
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)
 
 
 # =====================================
@@ -197,22 +245,41 @@ class DataframeFill(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("dataframe_fill")
-        self.trace.add_input("df", "DataFrame to fill")
-        self.trace.add_input("value", "Value to fill with")
-        self.trace.add_input("method", "Method to use for filling")
-        self.trace.add_input("axis", "Axis to fill along")
-        self.trace.add_input("inplace", "Whether to modify DataFrame in place")
-        self.trace.add_input("limit", "Maximum number of consecutive NaNs to fill")
-        self.trace.add_output("filled_df", "DataFrame with filled values")
-        self.trace.end()
-
     def forward(self, df, inplace=False, **kwargs):
-        if inplace:
-            df.fillna(inplace=True, **kwargs)
-            return df
-        return df.fillna(**kwargs)
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("dataframe_fill", {
+            "df_type": str(type(df).__name__),
+            "inplace": inplace,
+            "kwargs": str(kwargs)
+        })
+
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "filling_dataframe",
+                "df_shape": str(df.shape) if hasattr(df, 'shape') else "unknown",
+                "missing_values_before": str(df.isna().sum().sum()) if hasattr(df, 'isna') else "unknown"
+            })
+
+            if inplace:
+                df.fillna(inplace=True, **kwargs)
+                result = df
+            else:
+                result = df.fillna(**kwargs)
+
+            telemetry.log_event(trace, "success", {
+                "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown",
+                "missing_values_after": str(result.isna().sum().sum()) if hasattr(result, 'isna') else "unknown"
+            })
+
+            return result
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)
 
 
 # =====================================
@@ -242,19 +309,36 @@ class DataframeMerge(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("dataframe_merge")
-        self.trace.add_input("left", "Left DataFrame")
-        self.trace.add_input("right", "Right DataFrame")
-        self.trace.add_input("how", "Type of merge to perform")
-        self.trace.add_input("on", "Column names to join on")
-        self.trace.add_input("left_on", "Column names from left DataFrame to join on")
-        self.trace.add_input("right_on", "Column names from right DataFrame to join on")
-        self.trace.add_output("merged_df", "Merged DataFrame")
-        self.trace.end()
-
     def forward(self, left, right, **kwargs):
-        return pd.merge(left, right, **kwargs)
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("dataframe_merge", {
+            "left_type": str(type(left).__name__),
+            "right_type": str(type(right).__name__),
+            "kwargs": str(kwargs)
+        })
+
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "merging_dataframes",
+                "left_shape": str(left.shape) if hasattr(left, 'shape') else "unknown",
+                "right_shape": str(right.shape) if hasattr(right, 'shape') else "unknown"
+            })
+
+            result = pd.merge(left, right, **kwargs)
+
+            telemetry.log_event(trace, "success", {
+                "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
+            })
+
+            return result
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)
 
 
 # =====================================
@@ -275,18 +359,44 @@ class DataframeToNumeric(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("dataframe_to_numeric")
-        self.trace.add_input("df", "DataFrame to modify")
-        self.trace.add_input("column", "Column to convert to numeric")
-        self.trace.add_input("errors", "How to handle errors")
-        self.trace.add_input("downcast", "Type to downcast to")
-        self.trace.add_output("converted_df", "DataFrame with numeric column")
-        self.trace.end()
-
     def forward(self, df, column, errors='coerce', downcast=None):
-        df_clean = df.copy()
-        if df_clean[column].dtype == 'object':
-            df_clean[column] = df_clean[column].astype(str).str.replace('$', '').str.replace(',', '')
-        df_clean[column] = pd.to_numeric(df_clean[column], errors=errors, downcast=downcast)
-        return df_clean
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("dataframe_to_numeric", {
+            "df_type": str(type(df).__name__),
+            "column": column,
+            "errors": errors,
+            "downcast": str(downcast)
+        })
+
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "converting_to_numeric",
+                "df_shape": str(df.shape) if hasattr(df, 'shape') else "unknown",
+                "column_dtype_before": str(df[column].dtype) if hasattr(df, '__getitem__') else "unknown"
+            })
+
+            df_clean = df.copy()
+
+            if df_clean[column].dtype == 'object':
+                telemetry.log_event(trace, "processing", {
+                    "step": "cleaning_string_values",
+                    "column": column
+                })
+                df_clean[column] = df_clean[column].astype(str).str.replace('$', '').str.replace(',', '')
+
+            df_clean[column] = pd.to_numeric(df_clean[column], errors=errors, downcast=downcast)
+
+            telemetry.log_event(trace, "success", {
+                "result_shape": str(df_clean.shape) if hasattr(df_clean, 'shape') else "unknown",
+                "column_dtype_after": str(df_clean[column].dtype) if hasattr(df_clean, '__getitem__') else "unknown"
+            })
+
+            return df_clean
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)

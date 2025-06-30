@@ -19,17 +19,37 @@ class CreateDataframe(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("create_dataframe")
-        self.trace.add_input("data", "List of dictionaries (rows of data)")
-        self.trace.add_input("name", "Name to store the DataFrame under")
-        self.trace.add_output("success_message", "success message if no issues are found")
-        self.trace.end()
 
     def forward(self, data: list, name: str = "df") -> str:
-        df = pd.DataFrame(data)
-        dataframe_store[name] = df
-        return f"✅ Created DataFrame '{name}' with shape {df.shape}"
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("create_dataframe", {
+            "data_length": len(data) if hasattr(data, '__len__') else "unknown",
+            "name": name
+        })
+
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "creating_dataframe",
+                "data_sample": str(data[:2]) if hasattr(data, '__getitem__') and len(data) > 0 else "empty"
+            })
+
+            df = pd.DataFrame(data)
+            dataframe_store[name] = df
+
+            telemetry.log_event(trace, "success", {
+                "df_shape": str(df.shape) if hasattr(df, 'shape') else "unknown",
+                "df_columns": str(list(df.columns)) if hasattr(df, 'columns') else "unknown"
+            })
+
+            return f"✅ Created DataFrame '{name}' with shape {df.shape}"
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)
 
 
 class CopyDataframe(Tool):
@@ -44,18 +64,47 @@ class CopyDataframe(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("copy_dataframe")
-        self.trace.add_input("source_dataframe", "Name of the source DataFrame")
-        self.trace.add_input("copy_name", "New name for the copied DataFrame")
-        self.trace.add_output("success_message", "success message if no issues are found")
-        self.trace.end()
 
     def forward(self, source_dataframe: str, copy_name: str) -> str:
-        if source_dataframe not in dataframe_store:
-            raise ValueError(f"❌ Source DataFrame '{source_dataframe}' not found.")
-        dataframe_store[copy_name] = dataframe_store[source_dataframe].copy()
-        return f"📄 DataFrame '{source_dataframe}' copied to '{copy_name}'"
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("copy_dataframe", {
+            "source_dataframe": source_dataframe,
+            "copy_name": copy_name
+        })
+
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "checking_source_dataframe",
+                "available_dataframes": str(list(dataframe_store.keys()))
+            })
+
+            if source_dataframe not in dataframe_store:
+                telemetry.log_event(trace, "error", {
+                    "error_type": "ValueError",
+                    "error_message": f"Source DataFrame '{source_dataframe}' not found."
+                })
+                raise ValueError(f"❌ Source DataFrame '{source_dataframe}' not found.")
+
+            telemetry.log_event(trace, "processing", {
+                "step": "copying_dataframe",
+                "source_shape": str(dataframe_store[source_dataframe].shape) if hasattr(dataframe_store[source_dataframe], 'shape') else "unknown"
+            })
+
+            dataframe_store[copy_name] = dataframe_store[source_dataframe].copy()
+
+            telemetry.log_event(trace, "success", {
+                "copy_shape": str(dataframe_store[copy_name].shape) if hasattr(dataframe_store[copy_name], 'shape') else "unknown"
+            })
+
+            return f"📄 DataFrame '{source_dataframe}' copied to '{copy_name}'"
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)
 
 class SaveCleanedDataframe(Tool):
     name = "save_cleaned_dataframe"
@@ -70,13 +119,6 @@ class SaveCleanedDataframe(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("save_cleaned_dataframe")
-        self.trace.add_input("df", "The cleaned DataFrame")
-        self.trace.add_input("filename", "File name for the CSV output")
-        self.trace.add_output("confirmation", "Confirmation message")
-        self.trace.end()
-
     def forward(self, df: pd.DataFrame, filename: str = "tg_reviews_cleaned.csv") -> str:
         """
         Args:
@@ -86,12 +128,45 @@ class SaveCleanedDataframe(Tool):
         Returns:
             str: Confirmation message
         """
-        csv_bytes = df.to_csv(index=False).encode()
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("save_cleaned_dataframe", {
+            "df_type": str(type(df).__name__),
+            "filename": filename
+        })
 
-        if self.sandbox:
-            self.sandbox.files.write(filename, csv_bytes)
-            return f"Saved cleaned DataFrame to sandbox file: {filename}"
-        else:
-            with open(filename, "wb") as f:
-                f.write(csv_bytes)
-            return f"Saved cleaned DataFrame locally: {filename}"
+        try:
+            telemetry.log_event(trace, "processing", {
+                "step": "preparing_csv",
+                "df_shape": str(df.shape) if hasattr(df, 'shape') else "unknown",
+                "df_columns": str(list(df.columns)) if hasattr(df, 'columns') else "unknown"
+            })
+
+            csv_bytes = df.to_csv(index=False).encode()
+
+            telemetry.log_event(trace, "processing", {
+                "step": "saving_file",
+                "csv_size_bytes": len(csv_bytes),
+                "destination": "sandbox" if self.sandbox else "local"
+            })
+
+            if self.sandbox:
+                self.sandbox.files.write(filename, csv_bytes)
+                result = f"Saved cleaned DataFrame to sandbox file: {filename}"
+            else:
+                with open(filename, "wb") as f:
+                    f.write(csv_bytes)
+                result = f"Saved cleaned DataFrame locally: {filename}"
+
+            telemetry.log_event(trace, "success", {
+                "message": result
+            })
+
+            return result
+        except Exception as e:
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            raise
+        finally:
+            telemetry.finish_trace(trace)

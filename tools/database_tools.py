@@ -23,19 +23,38 @@ class DatabaseConnect(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("database_connect")
-        self.trace.add_output("connection_status", "Connection status message")
-        self.trace.end()
-
     def forward(self) -> str:
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("database_connect", {
+            "database": "sqlite:///data/tg_database.db"
+        })
+
         try:
             engine = create_engine('sqlite:///data/tg_database.db')
+
+            telemetry.log_event(trace, "processing", {
+                "step": "connecting_to_database"
+            })
+
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
+
+            # Log success
+            telemetry.log_event(trace, "success", {
+                "message": "Successfully connected to database"
+            })
+
             return "Successfully connected to database: sqlite:///data/tg_database.db"
         except Exception as e:
+            # Log error
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
             return f"Failed to connect to database: {str(e)}"
+        finally:
+            # Always finish the trace
+            telemetry.finish_trace(trace)
 
 class QuerySales(Tool):
     name = "query_sales"
@@ -74,20 +93,23 @@ class QuerySales(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("query_sales")
-        self.trace.add_input("columns", "Comma-separated list of columns to return")
-        self.trace.add_input("where_column", "Column name to filter by")
-        self.trace.add_input("where_value", "Value to filter for in the where_column")
-        self.trace.add_input("limit", "Maximum number of records to return")
-        self.trace.add_input("order_by", "Column to sort by")
-        self.trace.add_output("results", "Formatted query results")
-        self.trace.end()
-
     def forward(self, columns: str = "*", where_column: str = None, where_value: str = None,
                 limit: int = None, order_by: str = None) -> str:
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("query_sales", {
+            "columns": columns,
+            "where_column": where_column,
+            "where_value": where_value,
+            "limit": limit,
+            "order_by": order_by
+        })
         try:
             engine = create_engine('sqlite:///data/tg_database.db')
+
+            telemetry.log_event(trace, "processing", {
+                "step": "initializing_query",
+                "database": "sqlite:///data/tg_database.db"
+            })
 
             valid_columns = ["Product", "Ranking", "Platform", "Year", "Genre", "Publisher",
                          "NA_Sales", "EU_Sales", "Global_Sales"]
@@ -107,6 +129,11 @@ class QuerySales(Tool):
             if columns == "*":
                 select_clause = "*"
             else:
+                telemetry.log_event(trace, "processing", {
+                    "step": "validating_columns",
+                    "requested_columns": columns
+                })
+
                 # Clean and validate column names
                 requested_cols = [col.strip() for col in columns.split(",")]
                 mapped_cols = []
@@ -118,6 +145,10 @@ class QuerySales(Tool):
                     elif f'"{col}"' in valid_columns:
                         mapped_cols.append(f'"{col}"')
                     else:
+                        telemetry.log_event(trace, "error", {
+                            "error_type": "ValidationError",
+                            "error_message": f"Invalid column: {col}"
+                        })
                         return f"Invalid column: {col}. Valid columns: gender, age, remuneration, spending_score, loyalty_points, education, language, platform, product, review, summary"
 
                 select_clause = ", ".join(mapped_cols)
@@ -126,11 +157,26 @@ class QuerySales(Tool):
             query = f"SELECT {select_clause} FROM tg_reviews_table"
             params = {}
 
+            telemetry.log_event(trace, "processing", {
+                "step": "building_query",
+                "base_query": query
+            })
+
             # Add WHERE clause if specified
             if where_column and where_value:
+                telemetry.log_event(trace, "processing", {
+                    "step": "adding_where_clause",
+                    "where_column": where_column,
+                    "where_value": where_value
+                })
+
                 # Map column name if needed
                 mapped_where_col = column_mapping.get(where_column, where_column)
                 if mapped_where_col not in valid_columns and where_column not in [col.strip('"') for col in valid_columns]:
+                    telemetry.log_event(trace, "error", {
+                        "error_type": "ValidationError",
+                        "error_message": f"Invalid where_column: {where_column}"
+                    })
                     return f"Invalid where_column: {where_column}"
 
                 query += f" WHERE {mapped_where_col} = :where_value"
@@ -138,6 +184,11 @@ class QuerySales(Tool):
 
             # Add ORDER BY clause if specified
             if order_by:
+                telemetry.log_event(trace, "processing", {
+                    "step": "adding_order_by",
+                    "order_by": order_by
+                })
+
                 order_parts = order_by.split()
                 mapped_order_col = column_mapping.get(order_parts[0], order_parts[0])
                 query += f" ORDER BY {mapped_order_col}"
@@ -146,7 +197,17 @@ class QuerySales(Tool):
 
             # Add LIMIT if specified
             if limit:
+                telemetry.log_event(trace, "processing", {
+                    "step": "adding_limit",
+                    "limit": limit
+                })
+
                 query += f" LIMIT {limit}"
+
+            telemetry.log_event(trace, "processing", {
+                "step": "executing_query",
+                "final_query": query
+            })
 
             # Execute query
             with engine.connect() as conn:
@@ -155,6 +216,9 @@ class QuerySales(Tool):
                 columns_returned = result.keys()
 
                 if not rows:
+                    telemetry.log_event(trace, "success", {
+                        "result": "no_data_found"
+                    })
                     return "No review data found for the specified criteria"
 
                 # Format results as string
@@ -173,10 +237,23 @@ class QuerySales(Tool):
                 if len(rows) > sample_size:
                     output += f"\n... and {len(rows) - sample_size} more rows"
 
+                telemetry.log_event(trace, "success", {
+                    "rows_found": len(rows),
+                    "columns_returned": str(list(columns_returned))
+                })
+
                 return output
 
         except Exception as e:
+            # Log error
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
             return f"Error querying review data: {str(e)}"
+        finally:
+            # Always finish the trace
+            telemetry.finish_trace(trace)
 
 class QueryReviews(Tool):
     name = "query_reviews"
@@ -217,18 +294,16 @@ class QueryReviews(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("query_reviews")
-        self.trace.add_input("columns", "Comma-separated list of columns to return")
-        self.trace.add_input("where_column", "Column name to filter by")
-        self.trace.add_input("where_value", "Value to filter for in the where_column")
-        self.trace.add_input("limit", "Maximum number of records to return")
-        self.trace.add_input("order_by", "Column to sort by")
-        self.trace.add_output("results", "Formatted query results")
-        self.trace.end()
-
     def forward(self, columns: str = "*", where_column: str = None, where_value: str = None,
                 limit: int = None, order_by: str = None) -> str:
+        telemetry = TelemetryManager()
+        trace = telemetry.start_trace("query_reviews", {
+            "columns": columns,
+            "where_column": where_column,
+            "where_value": where_value,
+            "limit": limit,
+            "order_by": order_by
+        })
         """
         Query review data with flexible filtering and column selection.
 
@@ -239,6 +314,11 @@ class QueryReviews(Tool):
         """
         try:
             engine = create_engine('sqlite:///data/tg_database.db')
+
+            telemetry.log_event(trace, "processing", {
+                "step": "initializing_query",
+                "database": "sqlite:///data/tg_database.db"
+            })
 
             # Note: SQLite column names with spaces/special chars need quotes
             valid_columns = ["gender", "age", "\"remuneration (k£)\"", "\"spending_score (1-100)\"",
@@ -256,6 +336,11 @@ class QueryReviews(Tool):
             if columns == "*":
                 select_clause = "*"
             else:
+                telemetry.log_event(trace, "processing", {
+                    "step": "validating_columns",
+                    "requested_columns": columns
+                })
+
                 # Clean and validate column names
                 requested_cols = [col.strip() for col in columns.split(",")]
                 mapped_cols = []
@@ -267,6 +352,10 @@ class QueryReviews(Tool):
                     elif f'"{col}"' in valid_columns:
                         mapped_cols.append(f'"{col}"')
                     else:
+                        telemetry.log_event(trace, "error", {
+                            "error_type": "ValidationError",
+                            "error_message": f"Invalid column: {col}"
+                        })
                         return f"Invalid column: {col}. Valid columns: gender, age, remuneration, spending_score, loyalty_points, education, language, platform, product, review, summary"
 
                 select_clause = ", ".join(mapped_cols)
@@ -275,11 +364,26 @@ class QueryReviews(Tool):
             query = f"SELECT {select_clause} FROM tg_reviews_table"
             params = {}
 
+            telemetry.log_event(trace, "processing", {
+                "step": "building_query",
+                "base_query": query
+            })
+
             # Add WHERE clause if specified
             if where_column and where_value:
+                telemetry.log_event(trace, "processing", {
+                    "step": "adding_where_clause",
+                    "where_column": where_column,
+                    "where_value": where_value
+                })
+
                 # Map column name if needed
                 mapped_where_col = column_mapping.get(where_column, where_column)
                 if mapped_where_col not in valid_columns and where_column not in [col.strip('"') for col in valid_columns]:
+                    telemetry.log_event(trace, "error", {
+                        "error_type": "ValidationError",
+                        "error_message": f"Invalid where_column: {where_column}"
+                    })
                     return f"Invalid where_column: {where_column}"
 
                 query += f" WHERE {mapped_where_col} = :where_value"
@@ -287,6 +391,11 @@ class QueryReviews(Tool):
 
             # Add ORDER BY clause if specified
             if order_by:
+                telemetry.log_event(trace, "processing", {
+                    "step": "adding_order_by",
+                    "order_by": order_by
+                })
+
                 order_parts = order_by.split()
                 mapped_order_col = column_mapping.get(order_parts[0], order_parts[0])
                 query += f" ORDER BY {mapped_order_col}"
@@ -295,7 +404,17 @@ class QueryReviews(Tool):
 
             # Add LIMIT if specified
             if limit:
+                telemetry.log_event(trace, "processing", {
+                    "step": "adding_limit",
+                    "limit": limit
+                })
+
                 query += f" LIMIT {limit}"
+
+            telemetry.log_event(trace, "processing", {
+                "step": "executing_query",
+                "final_query": query
+            })
 
             # Execute query
             with engine.connect() as conn:
@@ -304,6 +423,9 @@ class QueryReviews(Tool):
                 columns_returned = result.keys()
 
                 if not rows:
+                    telemetry.log_event(trace, "success", {
+                        "result": "no_data_found"
+                    })
                     return "No review data found for the specified criteria"
 
                 # Format results as string
@@ -322,7 +444,20 @@ class QueryReviews(Tool):
                 if len(rows) > sample_size:
                     output += f"\n... and {len(rows) - sample_size} more rows"
 
+                telemetry.log_event(trace, "success", {
+                    "rows_found": len(rows),
+                    "columns_returned": str(list(columns_returned))
+                })
+
                 return output
 
         except Exception as e:
+            # Log error
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
             return f"Error querying review data: {str(e)}"
+        finally:
+            # Always finish the trace
+            telemetry.finish_trace(trace)

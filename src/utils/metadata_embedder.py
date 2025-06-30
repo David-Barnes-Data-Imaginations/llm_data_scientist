@@ -3,12 +3,16 @@ import json
 import numpy as np
 from openai import OpenAI
 import faiss as faiss
+# Fix OPENAI_API_KEY passing from OS to Sandbox
+import os
+from dotenv import load_dotenv
 
 class MetadataEmbedder:
     """Class for embedding metadata and storing them in a sandbox"""
     def __init__(self, sandbox=None):
         self.sandbox = sandbox
-        self.openai_client = OpenAI()
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.openai_client = OpenAI(api_key=openai_api_key)
 
         # Separate storage for metadata vs agent notes
         self.metadata_index_path = "embeddings/metadata_index.faiss"
@@ -65,7 +69,10 @@ class MetadataEmbedder:
 
         # Read the metadata file from sandbox
         try:
-            metadata_content = self.sandbox.files.read(file_path).decode()
+            metadata_content = self.sandbox.files.read(file_path)
+            # Check if it's bytes or string
+            if isinstance(metadata_content, bytes):
+                metadata_content = metadata_content.decode()
         except Exception as e:
             return f"Error reading metadata file: {e}"
 
@@ -167,64 +174,61 @@ class MetadataEmbedder:
 
         except Exception as e:
             print(f"Error searching metadata: {e}")
-        print(sandbox.files.listdir("/data/metadata"))
-        return []
+            return []
 
+    def embed_tool_help_notes(self, tools: list) -> str:
+        """
+        Embeds the help_notes field from each tool into the metadata index.
 
+        Args:
+            tools (list): List of tool instances
 
-def embed_tool_help_notes(self, tools: list) -> str:
-    """
-    Embeds the help_notes field from each tool into the metadata index.
+        Returns:
+            str: Success message with count of embedded help notes
+        """
+        if not tools:
+            return "No tools provided"
 
-    Args:
-        tools (list): List of tool instances
+        help_notes_count = 0
+        embeddings = []
 
-    Returns:
-        str: Success message with count of embedded help notes
-    """
-    if not tools:
-        return "No tools provided"
+        for tool in tools:
+            if hasattr(tool, "help_notes") and tool.help_notes:
+                try:
+                    # Create embedding for the help notes
+                    response = self.openai_client.embeddings.create(
+                        input=tool.help_notes,
+                        model="text-embedding-3-small"
+                    )
+                    embedding = response.data[0].embedding
+                    embeddings.append(embedding)
 
-    help_notes_count = 0
-    embeddings = []
+                    # Store metadata about this tool help
+                    self.metadata_store.append({
+                        "type": "tool_help",
+                        "tool_name": tool.name,
+                        "content": tool.help_notes,
+                        "created_at": "startup"
+                    })
+                    help_notes_count += 1
 
-    for tool in tools:
-        if hasattr(tool, "help_notes") and tool.help_notes:
+                except Exception as e:
+                    print(f"Error embedding help notes for tool {tool.name}: {e}")
+                    continue
+
+        if embeddings and self.metadata_index is not None:
+            # Add embeddings to existing index
+            self.metadata_index.add(np.array(embeddings).astype('float32'))
+
+            # Save updated index and store
             try:
-                # Create embedding for the help notes
-                response = self.openai_client.embeddings.create(
-                    input=tool.help_notes,
-                    model="text-embedding-3-small"
-                )
-                embedding = response.data[0].embedding
-                embeddings.append(embedding)
+                index_bytes = faiss.serialize_index(self.metadata_index).tobytes()
+                self.sandbox.files.write(self.metadata_index_path, index_bytes)
 
-                # Store metadata about this tool help
-                self.metadata_store.append({
-                    "type": "tool_help",
-                    "tool_name": tool.name,
-                    "content": tool.help_notes,
-                    "created_at": "startup"
-                })
-                help_notes_count += 1
+                store_json = json.dumps(self.metadata_store, indent=2)
+                self.sandbox.files.write(self.metadata_store_path, store_json.encode())
 
             except Exception as e:
-                print(f"Error embedding help notes for tool {tool.name}: {e}")
-                continue
+                return f"Error saving tool help embeddings: {e}"
 
-    if embeddings and self.metadata_index is not None:
-        # Add embeddings to existing index
-        self.metadata_index.add(np.array(embeddings).astype('float32'))
-
-        # Save updated index and store
-        try:
-            index_bytes = faiss.serialize_index(self.metadata_index).tobytes()
-            self.sandbox.files.write(self.metadata_index_path, index_bytes)
-
-            store_json = json.dumps(self.metadata_store, indent=2)
-            self.sandbox.files.write(self.metadata_store_path, store_json.encode())
-
-        except Exception as e:
-            return f"Error saving tool help embeddings: {e}"
-
-    return f"Successfully embedded help notes for {help_notes_count} tools"
+        return f"Successfully embedded help notes for {help_notes_count} tools"

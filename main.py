@@ -13,10 +13,7 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 LANGFUSE_PUBLIC_KEY= os.getenv('LANGFUSE_PUBLIC_KEY')
 LANGFUSE_SECRET_KEY= os.getenv('LANGFUSE_SECRET_KEY')
 LANGFUSE_AUTH=base64.b64encode(f"{LANGFUSE_PUBLIC_KEY}:{LANGFUSE_SECRET_KEY}".encode()).decode()
-import pandas as pd
-from typing import Dict
-from src.shared_state import chunk_number
-from src.shared_state import dataframe_store
+
 # Get API key from host env
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
@@ -88,7 +85,7 @@ def main():
 
     # Initialize chat interface using your custom GradioUI
     print("🌐 Initializing Gradio interface...")
-    gradio_ui = GradioUI(agent)
+
 
     print("✅ Application startup complete!")
 

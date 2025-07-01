@@ -1,11 +1,9 @@
-import pandas as pd
-import numpy as np
 from smolagents import Tool
 import pandas as pd
-from main import dataframe_store
+from src.shared_state import dataframe_store
 from src.client.telemetry import TelemetryManager
 telemetry = TelemetryManager()
-from main import chunk_number
+from src.shared_state import chunk_number
 
 class CreateDataframe(Tool):
     name = "create_dataframe"

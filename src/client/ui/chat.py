@@ -1,4 +1,3 @@
-# src/client/ui/chat.py
 import gradio as gr
 from langchain_core.chat_sessions import ChatSession
 from typing import Generator
@@ -8,7 +7,6 @@ from smolagents.memory import ActionStep, FinalAnswerStep
 from smolagents.models import ChatMessageStreamDelta, agglomerate_stream_deltas
 from smolagents.utils import _is_package_available
 import re
-
 from a_mcp_versions.prompts import CHAT_PROMPT, TCA_SYSTEM_PROMPT
 
 
@@ -254,7 +252,7 @@ def stream_to_gradio(
 # merge in with main gradio ui to fix
 """
 class ChatInterface:
-    def __init__(self, agent: CodeAgent):
+    def __init__(self, agent: ToolCallingAgent):
         
         self.current_trace_id = None
 """
@@ -281,16 +279,16 @@ class GradioUI:
 
     Example:
         ```python
-        from smolagents import CodeAgent, GradioUI, InferenceClientModel
+        from smolagents import ToolCallingAgent, GradioUI, InferenceClientModel
 
         model = InferenceClientModel(model_id="meta-llama/Meta-Llama-3.1-8B-Instruct")
-        agent = CodeAgent(tools=[], model=model)
+        agent = ToolCallingAgent(tools=[], model=model)
         gradio_ui = GradioUI(agent, file_upload_folder="uploads", reset_agent_memory=True)
         gradio_ui.launch()
         ```
     """
 
- #    def __init__(self, agent: CodeAgent, reset_agent_memory: bool = False):
+ #    def __init__(self, agent: ToolCallingAgent, reset_agent_memory: bool = False):
     def __init__(self, agent: ToolCallingAgent, reset_agent_memory: bool = False):
         if not _is_package_available("gradio"):
             raise ModuleNotFoundError(
@@ -329,6 +327,43 @@ class GradioUI:
         except Exception as e:
             yield messages
             raise gr.Error(f"Error in interaction: {str(e)}")
+
+    def _create_control_panel(self):
+        """Create the manual step control panel"""
+        with gr.Row():
+            self.manual_toggle = gr.Checkbox(label="Manual Step Mode", value=True)
+            self.next_step_button = gr.Button("Next Step", interactive=False)
+            self.status_display = gr.Textbox(label="Status", value="Ready", interactive=False)
+
+    def _create_chat_interface(self):
+        """Create the main chat interface"""
+        # Your existing chat UI code here
+        pass
+
+    def _setup_event_handlers(self):
+        """Setup all event handlers for the UI"""
+        self.manual_toggle.change(
+            fn=self._handle_manual_toggle,
+            inputs=self.manual_toggle,
+            outputs=self.status_display
+        )
+
+        self.next_step_button.click(
+            fn=self._handle_next_step,
+            outputs=self.status_display
+        )
+
+    def _handle_manual_toggle(self, mode):
+        """Handle manual mode toggle"""
+        self.agent.toggle_manual_mode(mode)
+        self.next_step_button.interactive = mode
+        return f"Manual mode: {'ON' if mode else 'OFF'}"
+
+    def _handle_next_step(self):
+        """Handle next step button click"""
+        self.agent.next_step()
+        return "Step authorized - continuing..."
+
 
     def log_user_message(self, text_input):
         import gradio as gr
@@ -419,3 +454,26 @@ class GradioUI:
             )
 
         return ChatSession
+
+def _start_agent_wrapper(self, prompt):
+    """Wrapper to handle async agent runner for Gradio"""
+    import asyncio
+    
+    # Create a new event loop for this thread if needed
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
+    # Set manual mode based on toggle state
+    self.agent.toggle_manual_mode(self.manual_toggle.value if hasattr(self, 'manual_toggle') else False)
+    
+    # Run the async agent runner and collect results
+    results = []
+    async def collect_results():
+        async for step in self.agent.agent_runner(prompt):
+            results.append(step)
+        return results
+    
+    return loop.run_until_complete(collect_results())

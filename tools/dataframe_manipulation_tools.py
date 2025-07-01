@@ -18,6 +18,7 @@ class DataframeMelt(Tool):
     name = "dataframe_melt"
     description = "Melt a DataFrame into a long-format DataFrame."
     inputs = {
+        "frame": {"type": "object", "description": "DataFrames to concatenate"},
         "id_vars": {"type": "object", "description": "Identifier columns", "optional": True, "nullable": True},
         "value_vars": {"type": "object", "description": "Columns to unpivot", "optional": True, "nullable": True},
         "var_name": {"type": "string", "description": "Name of variable column", "optional": True, "nullable": True},
@@ -58,11 +59,10 @@ class DataframeMelt(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-    def forward(self, frame, **kwargs):
+    def forward(self, frame: object, id_vars: object, value_vars: object, var_name: str, value_name: str, col_level: int, ignore_index: bool):
         telemetry = TelemetryManager()
         trace = telemetry.start_trace("dataframe_melt", {
             "frame_type": str(type(frame).__name__),
-            "kwargs": str(kwargs)
         })
 
         try:
@@ -70,8 +70,7 @@ class DataframeMelt(Tool):
                 "step": "melting_dataframe",
                 "frame_shape": str(frame.shape) if hasattr(frame, 'shape') else "unknown"
             })
-
-            result = pd.melt(frame, **kwargs)
+            result = pd.melt(frame, id_vars, value_vars, var_name, value_name, col_level, ignore_index)
 
             telemetry.log_event(trace, "success", {
                 "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
@@ -95,16 +94,10 @@ class DataframeConcat(Tool):
     name = "dataframe_concat"
     description = "Concatenate DataFrames along a specified axis."
     inputs = {
-        "objs": {"type": "object", "description": "List of DataFrames to concatenate"},
+        "objs": {"type": "object", "description": "First DataFrame to concatenate"},
+        "frame": {"type": "object", "description": "Second DataFrames to concatenate"},
         "axis": {"type": "integer", "optional": True, "nullable": True},
-        "join": {"type": "string", "optional": True, "nullable": True},
-        "ignore_index": {"type": "boolean", "optional": True, "nullable": True},
-        "keys": {"type": "object", "optional": True, "nullable": True},
-        "levels": {"type": "object", "optional": True, "nullable": True},
-        "names": {"type": "object", "optional": True, "nullable": True},
-        "verify_integrity": {"type": "boolean", "optional": True, "nullable": True},
-        "sort": {"type": "boolean", "optional": True, "nullable": True},
-        "copy": {"type": "boolean", "optional": True, "nullable": True},
+
     }
     output_type = "object"
     help_notes = """ 
@@ -137,11 +130,11 @@ class DataframeConcat(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-    def forward(self, objs, **kwargs):
+    def forward(self, objs, axis: object, join: str, ignore_index: bool, keys=None, levels=None, names=None, verify_integrity=False, sort=False, copy=True ):
         telemetry = TelemetryManager()
         trace = telemetry.start_trace("dataframe_concat", {
             "objs_count": len(objs) if hasattr(objs, '__len__') else "unknown",
-            "kwargs": str(kwargs)
+
         })
 
         try:
@@ -150,7 +143,7 @@ class DataframeConcat(Tool):
                 "objs_types": str([type(obj).__name__ for obj in objs]) if hasattr(objs, '__iter__') else "unknown"
             })
 
-            result = pd.concat(objs, **kwargs)
+            result = pd.concat(objs, axis, join, ignore_index, keys, levels, verify_integrity, sort, copy)
 
             telemetry.log_event(trace, "success", {
                 "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"

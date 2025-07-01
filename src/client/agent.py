@@ -1,14 +1,33 @@
 from smolagents import ToolCallingAgent
 from typing import List
 from smolagents import Tool
-from a_mcp_versions.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
-
+from src.utils.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
 # Prompt templates
 templates = {
     "system": TCA_SYSTEM_PROMPT,
     "main": TCA_MAIN_PROMPT,
     "chat": CHAT_PROMPT
 }
+
+class StepController:
+    def __init__(self):
+        self.ready = asyncio.Event()
+        self.manual_mode = False
+
+    def next(self):
+        self.ready.set()
+
+    async def wait(self):
+        if self.manual_mode:
+            await self.ready.wait()
+            self.ready.clear()
+        else:
+            await asyncio.sleep(0.5)
+
+    def toggle_mode(self, manual: bool):
+        self.manual_mode = manual
+        if not manual:
+            self.ready.set()  # Unblock any pending waits
 
 class CustomAgent:
     """Custom agent wrapper that configures ToolCallingAgent with our tools and settings"""
@@ -17,14 +36,12 @@ class CustomAgent:
         self.metadata_embedder = metadata_embedder
         self.tools = tools or []
 
-        # Default to Ollama model if not specified
         if model_id is None:
-            model_id = "ollama://DeepSeek-R1-Distill"  # or whatever model you have in Ollama
+            model_id = "ollama://DeepSeek-R1-Distill"
 
-        # Create the ToolCallingAgent with Ollama model
         self.agent = ToolCallingAgent(
             tools=self.tools,
-            model=model_id,  # Add this line to specify Ollama model
+            model=model_id,
             system_prompt=templates["system"],
             prompt=templates["main"],
             chat_prompt=templates["chat"],
@@ -37,14 +54,54 @@ class CustomAgent:
         )
 
         self.telemetry = None
+        self.controller = StepController()
 
     def run(self, task: str):
-        """Run the agent on a task"""
         return self.agent.run(task)
 
- #   def __getattr__(self, name):
-        """Delegate any missing attributes to the underlying agent"""
- #       return getattr(self.agent, name)
+    def think(self, task: str):
+        return self.agent.think(task)
+
+    def run_stream(self, task: str):
+        for step in self.agent.run_stream(task):
+            yield step
+
+    def think_stream(self, task: str):
+        for step in self.agent.think_stream(task):
+            yield step
+
+    def log_agent_step(self, thought: str, tool: str = "", params: dict = None, result: str = ""):
+        event = {
+            "thought": thought,
+            "tool": tool,
+            "params": params or {},
+            "result": result
+        }
+        if self.telemetry:
+            self.telemetry.log_agent_step(event)
+        print("\U0001F9E0 AGENT STEP:", json.dumps(event, indent=2))
+        return event
+
+    async def agent_runner(self, prompt: str):
+        async for step in self._think_stream_async(prompt):
+            self.log_agent_step(
+                thought=step.get("thought", ""),
+                tool=step.get("tool_name", ""),
+                params=step.get("tool_input", {}),
+                result=step.get("observation", "")
+            )
+            yield step
+            await self.controller.wait()
+
+    async def _think_stream_async(self, task: str):
+        for step in self.agent.think_stream(task):
+            yield step
+
+    def toggle_manual_mode(self, manual: bool):
+        self.controller.toggle_mode(manual)
+
+    def next_step(self):
+        self.controller.next()
 
 class ToolFactory:
     """Factory for creating all tools with proper dependencies"""
@@ -62,8 +119,7 @@ class ToolFactory:
         from tools.documentation_tools import (DocumentLearningInsights,
                                                RetrieveMetadata, RetrieveSimilarChunks,
                                                ValidateCleaningResults, SaveCleanedDataframe, GetToolHelp)
-        from tools.data_structure_feature_engineering_tools import (OneHotEncode, ApplyFeatureHashing, SmoteBalance,
-                                                                    CalculateSparsity, HandleMissingValues)
+        from tools.data_structure_feature_engineering_tools import CalculateSparsity, HandleMissingValues
         from tools.dataframe_manipulation_tools import DataframeMelt, DataframeConcat, DataframeDrop, DataframeFill, DataframeMerge, DataframeToNumeric
         from tools.dataframe_storage import CreateDataframe, CopyDataframe
 
@@ -83,11 +139,8 @@ class ToolFactory:
             RetrieveSimilarChunks(sandbox=self.sandbox),
             ValidateCleaningResults(sandbox=self.sandbox),
             SaveCleanedDataframe(sandbox=self.sandbox),
-            OneHotEncode(sandbox=self.sandbox),
-            ApplyFeatureHashing(sandbox=self.sandbox),
             CalculateSparsity(sandbox=self.sandbox),
             HandleMissingValues(sandbox=self.sandbox),
-            SmoteBalance(sandbox=self.sandbox),
             DataframeMelt(sandbox=self.sandbox),
             DataframeConcat(sandbox=self.sandbox),
             DataframeDrop(sandbox=self.sandbox),

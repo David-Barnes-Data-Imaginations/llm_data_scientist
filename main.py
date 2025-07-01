@@ -4,7 +4,7 @@ from e2b_code_interpreter import Sandbox
 from src.client.telemetry import TelemetryManager
 from src.utils.metadata_embedder import MetadataEmbedder
 from src.client.agent import ToolFactory, CustomAgent
-from src.client.ui.chat import GradioUI
+from src.client.ui.chat import GradioUI as gradio_ui
 from src.utils.ollama_utils import wait_for_ollama_server, start_ollama_server_background, pull_model
 from dotenv import load_dotenv
 
@@ -33,8 +33,10 @@ def main():
         dataset_path_in_sandbox = sandbox.files.write("/data/tg_database.db", f)
     with open("./src/data/metadata/turtle_games_dataset_metadata.md", "r") as f:
         metadata_path_in_sandbox = sandbox.files.write("/data/metadata/turtle_games_dataset_metadata.md", f)
+    with open("./states/agent_step_log.jsonl", "rb") as f:
+        sandbox.files.write("/states/agent_step_log.jsonl", f)
 
-    # Pass ALL required API keys into the sandbox properly
+    # Pass all required API keys into the sandbox properly
     # (important: `export` here is shell-scoped and not enough on its own)
     sandbox.commands.run(f"echo 'OPENAI_API_KEY={openai_api_key}' >> ~/.bashrc")
     sandbox.commands.run(f"export OPENAI_API_KEY={openai_api_key}")
@@ -79,18 +81,19 @@ def main():
         tools=tools,
         sandbox=sandbox,
         metadata_embedder=metadata_embedder,
-        model_id="ollama://DeepSeek-R1-Distill"  # Specify your Ollama model
+        model_id="ollama://DeepSeek-R1-Distill"
     )
     agent.telemetry = TelemetryManager()
 
     # Initialize chat interface using your custom GradioUI
     print("🌐 Initializing Gradio interface...")
-
+    ui = gradio_ui(agent)  # Pass the CustomAgent instance here!
 
     print("✅ Application startup complete!")
 
     # Launch the interface
-    gradio_ui.launch(share=False, server_port=7860)
+    ui.launch(share=False, server_port=7860)
+
 
 if __name__ == "__main__":
     main()

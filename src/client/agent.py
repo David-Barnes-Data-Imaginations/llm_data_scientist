@@ -1,10 +1,11 @@
-import asyncio
-import json
 import datetime
+import asyncio  # Add this
+import json     # Add this
 from smolagents import ToolCallingAgent
 from typing import List
 from smolagents import Tool
 from src.utils.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
+T
 # Prompt templates
 templates = {
     "system": TCA_SYSTEM_PROMPT,
@@ -12,6 +13,7 @@ templates = {
     "chat": CHAT_PROMPT
 }
 
+# StepController handles step management by adding a time delay, alongside the manual controls
 class StepController:
     def __init__(self):
         self.ready = asyncio.Event()
@@ -32,6 +34,8 @@ class StepController:
         if not manual:
             self.ready.set()  # Unblock any pending waits
 
+
+# Defines the Custom agent, which is currently a ToolCallingAgent. CodeAgent has same structure but switches prompt
 class CustomAgent:
     """Custom agent wrapper that configures ToolCallingAgent with our tools and settings"""
 
@@ -62,47 +66,43 @@ class CustomAgent:
     def run(self, task: str):
         return self.agent.run(task)
 
-    def think(self, task: str):
-        return self.agent.think(task)
-
-    def think_stream(self, task: str):
-        for step in self.agent.think_stream(task):
-            yield step
-
-    def log_agent_step(self, thought: str, tool: str = "", params: dict = None, result: str = "", status: str = "completed", step_number: int = None):
+    def log_agent_step(self, thought: str, tool: str = "", params: dict = None, result: str = ""):
         event = {
-            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-            "step_number": step_number,
             "thought": thought,
             "tool": tool,
             "params": params or {},
-            "result": result,
-            "status": status,
-            "notes": None
+            "result": result
         }
-        with open("logs/agent_steps.jsonl", "a") as f:
+        if self.telemetry:
+            self.telemetry.log_agent_step(event)
+        with open("states/agent_step_log.jsonl", "a") as f:
             f.write(json.dumps(event) + "\n")
-        with open("logs/agent_steps.jsonl", "a") as f:
-            f.write(json.dumps(event) + "\n")
-            if self.telemetry:
-                self.telemetry.log_agent_step(event)
-            print("\U0001F9E0 AGENT STEP:", json.dumps(event, indent=2))
-            return event
+        print("🧠 AGENT STEP saved to log.")
+        return event
 
-    async def agent_runner(self, prompt: str):
-        async for step in self._think_stream_async(prompt):
-            self.log_agent_step(
-                thought=step.get("thought", ""),
-                tool=step.get("tool_name", ""),
-                params=step.get("tool_input", {}),
-                result=step.get("observation", "")
-            )
-            yield step
-            await self.controller.wait()
-
-    async def _think_stream_async(self, task: str):
-        for step in self.agent.think_stream(task):
-            yield step
+    async def agent_runner(self, task: str):
+        trace = self.agent.run(task)
+        for step in trace.steps:
+            if hasattr(step, "tool_name"):
+                self.log_agent_step(
+                    thought=getattr(step, "thought", ""),
+                    tool=step.tool_name,
+                    params=step.tool_input,
+                    result=step.observation
+                )
+                yield {
+                    "thought": getattr(step, "thought", ""),
+                    "tool_name": step.tool_name,
+                    "tool_input": step.tool_input,
+                    "observation": step.observation
+                }
+                await self.controller.wait()
+            elif hasattr(step, "message"):
+                yield {
+                    "thought": step.message.content
+                }
+                await self.controller.wait()
+            pass
 
     def toggle_manual_mode(self, manual: bool):
         self.controller.toggle_mode(manual)
@@ -129,8 +129,6 @@ class ToolFactory:
         from tools.data_structure_feature_engineering_tools import CalculateSparsity, HandleMissingValues
         from tools.dataframe_manipulation_tools import DataframeMelt, DataframeConcat, DataframeDrop, DataframeFill, DataframeMerge, DataframeToNumeric
         from tools.dataframe_storage import CreateDataframe, CopyDataframe
-
-
 
         # Create instances of your custom tools
         tools = [

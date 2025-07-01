@@ -3,13 +3,6 @@ from smolagents import Tool
 import numpy as np
 from src.client.telemetry import TelemetryManager
 
-# =====================================
-# ✅ GENERAL NOTES (applies to all classes)
-# =====================================
-# ✔ Good modularity
-# ✔ Inputs and outputs are correctly specified
-# ✔ Proper handling of optional/inplace arguments
-# 🟡 Could improve: Error handling, input validation, and memory persistence
 
 # =====================================
 # MELT
@@ -18,7 +11,7 @@ class DataframeMelt(Tool):
     name = "dataframe_melt"
     description = "Melt a DataFrame into a long-format DataFrame."
     inputs = {
-        "frame": {"type": "object", "description": "DataFrames to concatenate"},
+        "frame": {"type": "object", "description": "DataFrame to melt"},
         "id_vars": {"type": "object", "description": "Identifier columns", "optional": True, "nullable": True},
         "value_vars": {"type": "object", "description": "Columns to unpivot", "optional": True, "nullable": True},
         "var_name": {"type": "string", "description": "Name of variable column", "optional": True, "nullable": True},
@@ -59,7 +52,9 @@ class DataframeMelt(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-    def forward(self, frame: object, id_vars: object, value_vars: object, var_name: str, value_name: str, col_level: int, ignore_index: bool):
+    def forward(self, frame: object, id_vars: object = None, value_vars: object = None, 
+                var_name: str = None, value_name: str = None, col_level: int = None, 
+                ignore_index: bool = None):
         telemetry = TelemetryManager()
         trace = telemetry.start_trace("dataframe_melt", {
             "frame_type": str(type(frame).__name__),
@@ -70,13 +65,33 @@ class DataframeMelt(Tool):
                 "step": "melting_dataframe",
                 "frame_shape": str(frame.shape) if hasattr(frame, 'shape') else "unknown"
             })
-            result = pd.melt(frame, id_vars, value_vars, var_name, value_name, col_level, ignore_index)
+            
+            # Build the melt parameters dict, filtering out None values
+            melt_params = {
+                "frame": frame,
+            }
+            
+            if id_vars is not None:
+                melt_params["id_vars"] = id_vars
+            if value_vars is not None:
+                melt_params["value_vars"] = value_vars
+            if var_name is not None:
+                melt_params["var_name"] = var_name
+            if value_name is not None:
+                melt_params["value_name"] = value_name
+            if col_level is not None:
+                melt_params["col_level"] = col_level
+            if ignore_index is not None:
+                melt_params["ignore_index"] = ignore_index
+            
+            # Call pd.melt with the correct parameters
+            result = pd.melt(**melt_params)
 
             telemetry.log_event(trace, "success", {
                 "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
             })
-
             return result
+
         except Exception as e:
             telemetry.log_event(trace, "error", {
                 "error_type": str(type(e).__name__),

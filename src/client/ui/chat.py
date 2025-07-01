@@ -2,13 +2,13 @@ import gradio as gr
 from langchain_core.chat_sessions import ChatSession
 from typing import Generator
 from smolagents.agent_types import AgentText
-from smolagents.agents import PlanningStep, ToolCallingAgent
+from smolagents.agents import PlanningStep
 from smolagents.memory import ActionStep, FinalAnswerStep
 from smolagents.models import ChatMessageStreamDelta, agglomerate_stream_deltas
 from smolagents.utils import _is_package_available
 import re
-from a_mcp_versions.prompts import CHAT_PROMPT, TCA_SYSTEM_PROMPT
-
+from src.utils.prompts import CHAT_PROMPT, TCA_SYSTEM_PROMPT
+from src.client.agent import CustomAgent
 
 def get_step_footnote_content(step_log: ActionStep | PlanningStep, step_name: str) -> str:
     """Get a footnote string for a step log with duration and token information"""
@@ -288,16 +288,36 @@ class GradioUI:
         ```
     """
 
- #    def __init__(self, agent: ToolCallingAgent, reset_agent_memory: bool = False):
-    def __init__(self, agent: ToolCallingAgent, reset_agent_memory: bool = False):
-        if not _is_package_available("gradio"):
-            raise ModuleNotFoundError(
-                "Please install 'gradio' extra to use the GradioUI: `pip install 'smolagents[gradio]'`"
-            )
-        self.agent = agent
-        self.reset_agent_memory = reset_agent_memory
-        self.name = getattr(agent, "name") or "Agent interface"
-        self.description = getattr(agent, "description", None)
+    def __init__(self, agent):  # This should be your CustomAgent instance
+        self.agent = agent  # This is now a CustomAgent, not ToolCallingAgent
+        self.name = "Smolagents Gradio UI"
+        self.description = "A Gradio interface for interacting with agents"
+        self.reset_agent_memory = False
+
+    def _handle_manual_toggle(self, mode):
+        """Handle manual mode toggle"""
+        self.agent.toggle_manual_mode(mode)  # This calls CustomAgent.toggle_manual_mode()
+        # Note: Gradio components don't have .interactive attribute like this
+        # You need to return a gr.update() instead
+        return f"Manual mode: {'ON' if mode else 'OFF'}"
+
+    def _handle_next_step(self):
+        """Handle next step button click"""
+        self.agent.next_step()  # This calls CustomAgent.next_step()
+        return "Step authorized - continuing..."
+
+    def _setup_event_handlers(self):
+        """Setup all event handlers for the UI"""
+        self.manual_toggle.change(
+            fn=self._handle_manual_toggle,
+            inputs=self.manual_toggle,
+            outputs=self.status_display
+        )
+
+        self.next_step_button.click(
+            fn=self._handle_next_step,
+            outputs=self.status_display
+        )
 
     def interact_with_agent(self, prompt, messages, session_state):
 
@@ -340,37 +360,12 @@ class GradioUI:
         # Your existing chat UI code here
         pass
 
-    def _setup_event_handlers(self):
-        """Setup all event handlers for the UI"""
-        self.manual_toggle.change(
-            fn=self._handle_manual_toggle,
-            inputs=self.manual_toggle,
-            outputs=self.status_display
-        )
-
-        self.next_step_button.click(
-            fn=self._handle_next_step,
-            outputs=self.status_display
-        )
-
-    def _handle_manual_toggle(self, mode):
-        """Handle manual mode toggle"""
-        self.agent.toggle_manual_mode(mode)
-        self.next_step_button.interactive = mode
-        return f"Manual mode: {'ON' if mode else 'OFF'}"
-
-    def _handle_next_step(self):
-        """Handle next step button click"""
-        self.agent.next_step()
-        return "Step authorized - continuing..."
-
-
     def log_user_message(self, text_input):
         import gradio as gr
 
         return text_input, gr.Button(interactive=False)
 
-    def launch(self, share: bool = True, **kwargs):
+    def launch(self, share: bool = False, **kwargs):
         """
         Launch the Gradio app with the agent interface.
 
@@ -397,6 +392,13 @@ class GradioUI:
                     + (f"\n\n**Agent description:**\n{self.description}" if self.description else "")
                 )
 
+                # Add manual control components here
+                with gr.Group():
+                    gr.Markdown("**Agent Controls**", container=True)
+                    self.manual_toggle = gr.Checkbox(label="Manual Step Mode", value=True)
+                    self.next_step_button = gr.Button("Next Step", variant="secondary")
+                    self.status_display = gr.Textbox(label="Status", value="Ready", interactive=False)
+
                 with gr.Group():
                     gr.Markdown("**Your request**", container=True)
                     text_input = gr.Textbox(
@@ -411,7 +413,6 @@ class GradioUI:
             chatbot = gr.Chatbot(
                 label="Agent",
                 type="messages",
-
                 resizeable=True,
                 scale=1,
                 latex_delimiters=[
@@ -422,7 +423,19 @@ class GradioUI:
                 ],
             )
 
-            # Set up event handlers
+            # Set up event handlers for manual controls
+            self.manual_toggle.change(
+                fn=self._handle_manual_toggle,
+                inputs=self.manual_toggle,
+                outputs=self.status_display
+            )
+            
+            self.next_step_button.click(
+                fn=self._handle_next_step,
+                outputs=self.status_display
+            )
+
+            # Set up chat event handlers
             text_input.submit(
                 self.log_user_message,
                 [text_input, file_uploads_log],
@@ -453,22 +466,22 @@ class GradioUI:
                 [text_input, submit_btn],
             )
 
-        return ChatSession
+        return demo  # Return the actual Gradio app, not ChatSession!
 
 def _start_agent_wrapper(self, prompt):
     """Wrapper to handle async agent runner for Gradio"""
     import asyncio
-    
+
     # Create a new event loop for this thread if needed
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    
+
     # Set manual mode based on toggle state
     self.agent.toggle_manual_mode(self.manual_toggle.value if hasattr(self, 'manual_toggle') else False)
-    
+
     # Run the async agent runner and collect results
     results = []
     async def collect_results():

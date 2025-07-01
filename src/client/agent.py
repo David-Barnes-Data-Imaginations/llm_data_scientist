@@ -1,3 +1,6 @@
+import asyncio
+import json
+import datetime
 from smolagents import ToolCallingAgent
 from typing import List
 from smolagents import Tool
@@ -62,25 +65,29 @@ class CustomAgent:
     def think(self, task: str):
         return self.agent.think(task)
 
-    def run_stream(self, task: str):
-        for step in self.agent.run_stream(task):
-            yield step
-
     def think_stream(self, task: str):
         for step in self.agent.think_stream(task):
             yield step
 
-    def log_agent_step(self, thought: str, tool: str = "", params: dict = None, result: str = ""):
+    def log_agent_step(self, thought: str, tool: str = "", params: dict = None, result: str = "", status: str = "completed", step_number: int = None):
         event = {
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "step_number": step_number,
             "thought": thought,
             "tool": tool,
             "params": params or {},
-            "result": result
+            "result": result,
+            "status": status,
+            "notes": None
         }
-        if self.telemetry:
-            self.telemetry.log_agent_step(event)
-        print("\U0001F9E0 AGENT STEP:", json.dumps(event, indent=2))
-        return event
+        with open("logs/agent_steps.jsonl", "a") as f:
+            f.write(json.dumps(event) + "\n")
+        with open("logs/agent_steps.jsonl", "a") as f:
+            f.write(json.dumps(event) + "\n")
+            if self.telemetry:
+                self.telemetry.log_agent_step(event)
+            print("\U0001F9E0 AGENT STEP:", json.dumps(event, indent=2))
+            return event
 
     async def agent_runner(self, prompt: str):
         async for step in self._think_stream_async(prompt):

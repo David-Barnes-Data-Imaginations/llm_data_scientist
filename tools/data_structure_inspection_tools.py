@@ -1,4 +1,4 @@
-from src.shared_state import dataframe_store
+from src.states.shared_state import dataframe_store
 from src.utils.validate_schema import DataValidator
 import pandas as pd
 import numpy as np

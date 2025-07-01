@@ -139,7 +139,6 @@ class DocumentLearningInsights(Tool):
         self.trace.finish()
 
     def forward(self, notes: str) -> str:
-        from src.shared_state import chunk_number
         """
         Args:
             notes (str): The agent's reflections on the current chunk.

@@ -379,7 +379,7 @@ class GradioUI:
             **kwargs: Additional keyword arguments to pass to the Gradio launch method.
         """
         # Leave as false until finished then change back to true
-        self.create_app().launch(debug=True, share=false, **kwargs)
+        self.create_app().launch(debug=True, share=False, **kwargs)
 
     def create_app(self):
         import gradio as gr

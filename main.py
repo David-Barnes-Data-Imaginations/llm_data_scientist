@@ -17,7 +17,7 @@ LANGFUSE_AUTH=base64.b64encode(f"{LANGFUSE_PUBLIC_KEY}:{LANGFUSE_SECRET_KEY}".en
 # Get API key from host env
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "https://cloud.langfuse.com/api/public/otel" # EU data region
+os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = 'host="https://cloud.langfuse.com' # EU data region
 os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Basic {LANGFUSE_AUTH}"
 
 # Global memory (replace these with a controlled registry in production / CA via the below 'with open' etc..)
@@ -36,30 +36,46 @@ def main():
     with open("./states/agent_step_log.jsonl", "rb") as f:
         sandbox.files.write("/states/agent_step_log.jsonl", f)
 
+    # Install required packages in sandbox
+    # ✅ Install dependencies
+    sandbox.commands.run("pip install langfuse smolagents faiss-cpu openai numpy sqlalchemy pandas imbalanced-learn langfuse opentelemetry-api opentelemetry-sdk")
+
+    # ✅ Write Langfuse config to a Python file in the sandbox
+    langfuse_setup_code = f"""
+    from langfuse import Langfuse
+    from opentelemetry.sdk.trace import TracerProvider
+    from openinference.instrumentation.smolagents import SmolagentsInstrumentor
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    
+    langfuse = Langfuse(
+        secret_key=\"{LANGFUSE_SECRET_KEY}\",
+        public_key=\"{LANGFUSE_PUBLIC_KEY}\",
+        host=\"https://cloud.langfuse.com\"
+    )
+    """
+
+    # Write this config to a file inside the sandbox
+    sandbox.files.write("/config/langfuse_setup.py", langfuse_setup_code.encode())
+
     # Pass all required API keys into the sandbox properly
     # (important: `export` here is shell-scoped and not enough on its own)
     sandbox.commands.run(f"echo 'OPENAI_API_KEY={openai_api_key}' >> ~/.bashrc")
     sandbox.commands.run(f"export OPENAI_API_KEY={openai_api_key}")
-    
-    # Add Langfuse API keys to sandbox
-    sandbox.commands.run(f"echo 'LANGFUSE_PUBLIC_KEY={LANGFUSE_PUBLIC_KEY}' >> ~/.bashrc")
-    sandbox.commands.run(f"export LANGFUSE_PUBLIC_KEY={LANGFUSE_PUBLIC_KEY}")
+
     sandbox.commands.run(f"echo 'LANGFUSE_SECRET_KEY={LANGFUSE_SECRET_KEY}' >> ~/.bashrc")
     sandbox.commands.run(f"export LANGFUSE_SECRET_KEY={LANGFUSE_SECRET_KEY}")
     
     # Also set OTEL environment variables in sandbox
-    sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com/api/public/otel' >> ~/.bashrc")
+    sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_ENDPOINT=host=https://cloud.langfuse.com >> ~/.bashrc")
     sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic {LANGFUSE_AUTH}' >> ~/.bashrc")
-    sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com/api/public/otel")
+    sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com")
     sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_HEADERS='Authorization=Basic {LANGFUSE_AUTH}'")
     
     # Verify environment variables are set
     sandbox.commands.run("echo OPENAI_API_KEY is set as: $OPENAI_API_KEY")
     sandbox.commands.run("echo LANGFUSE_PUBLIC_KEY is set as: $LANGFUSE_PUBLIC_KEY")
     sandbox.commands.run("echo LANGFUSE_SECRET_KEY is set as: $LANGFUSE_SECRET_KEY")
-    
-    # Install required packages in sandbox (add langfuse)
-    sandbox.commands.run("pip install smolagents faiss-cpu openai numpy sqlalchemy pandas imbalanced-learn langfuse opentelemetry-api opentelemetry-sdk")
 
     # Initialize metadata embedder and embed metadata file
     print("📚 Setting up metadata embeddings...")

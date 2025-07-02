@@ -1,6 +1,6 @@
 from smolagents import Tool
 from src.client.telemetry import TelemetryManager
-
+from langfuse import observe, get_client
 
 class CalculateSparsity(Tool):
     name = "calculate_sparsity"
@@ -29,7 +29,7 @@ class CalculateSparsity(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-
+    @observe
     def forward(self, data: object) -> object:
         """
         Calculate and return the sparsity of the given 'data'.
@@ -43,6 +43,8 @@ class CalculateSparsity(Tool):
             float: Sparsity as a proportion of zero elements (0 to 1).
         """
         telemetry = TelemetryManager()
+        langfuse = get_client()
+
         trace = telemetry.start_trace("calculate_sparsity", {
             "data_type": str(type(data).__name__)
         })
@@ -74,11 +76,13 @@ class CalculateSparsity(Tool):
                     "total_elements": total_elements
                 })
 
+                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                 return sparsity
             else:
                 telemetry.log_event(trace, "warning", {
                     "message": "Input is not a numpy array, returning 0.0"
                 })
+                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                 return 0.0
 
         except Exception as e:
@@ -89,7 +93,9 @@ class CalculateSparsity(Tool):
             })
             raise
         finally:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
+            pass
 
 class HandleMissingValues(Tool):
     name = "HandleMissingValues"
@@ -123,6 +129,7 @@ class HandleMissingValues(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe
     def forward(self, df, method='linear', axis=0, fill_strategy=None, inplace=False):
         """
         Args:
@@ -152,6 +159,7 @@ class HandleMissingValues(Tool):
         df_copy = handle_missing_values(df_copy, fill_strategy=0)  # Replace NaNs with 0
         """
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("handle_missing_values", {
             "method": method,
             "axis": axis,
@@ -204,6 +212,7 @@ class HandleMissingValues(Tool):
                 "remaining_missing_values": str(df.isna().sum().sum()) if hasattr(df, 'isna') else "unknown"
             })
 
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return df
 
         except Exception as e:
@@ -215,4 +224,5 @@ class HandleMissingValues(Tool):
             raise ValueError(f"Error handling missing values: {e}")
         finally:
             # Always finish the trace
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)

@@ -2,13 +2,15 @@ import pandas as pd
 from smolagents import Tool
 import numpy as np
 from src.client.telemetry import TelemetryManager
-
+from langfuse import observe, get_client
 
 # =====================================
 # MELT
 # =====================================
+
+
 class DataframeMelt(Tool):
-    name = "dataframe_melt"
+    name = "DataframeMelt"
     description = "Melt a DataFrame into a long-format DataFrame."
     inputs = {
         "frame": {"type": "object", "description": "DataFrame to melt"},
@@ -51,11 +53,12 @@ class DataframeMelt(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-
+    @observe(name="DataframeMelt")
     def forward(self, frame: object, id_vars: object = None, value_vars: object = None, 
                 var_name: str = None, value_name: str = None, col_level: int = None, 
                 ignore_index: bool = None):
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("dataframe_melt", {
             "frame_type": str(type(frame).__name__),
         })
@@ -90,6 +93,7 @@ class DataframeMelt(Tool):
             telemetry.log_event(trace, "success", {
                 "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
             })
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return result
 
         except Exception as e:
@@ -99,14 +103,17 @@ class DataframeMelt(Tool):
             })
             raise
         finally:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
+            pass
+
 
 
 # =====================================
 # CONCAT
 # =====================================
 class DataframeConcat(Tool):
-    name = "dataframe_concat"
+    name = "DataframeConcat"
     description = "Concatenate DataFrames along a specified axis."
     inputs = {
         "objs": {"type": "object", "description": "First DataFrame to concatenate"},
@@ -145,8 +152,10 @@ class DataframeConcat(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe(name="DataframeConcat")
     def forward(self, objs, axis: object, join: str, ignore_index: bool, keys=None, levels=None, names=None, verify_integrity=False, sort=False, copy=True ):
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("dataframe_concat", {
             "objs_count": len(objs) if hasattr(objs, '__len__') else "unknown",
 
@@ -163,7 +172,7 @@ class DataframeConcat(Tool):
             telemetry.log_event(trace, "success", {
                 "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
             })
-
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return result
         except Exception as e:
             telemetry.log_event(trace, "error", {
@@ -172,14 +181,16 @@ class DataframeConcat(Tool):
             })
             raise
         finally:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
+            pass
 
 
 # =====================================
 # DROP
 # =====================================
 class DataframeDrop(Tool):
-    name = "dataframe_drop"
+    name = "DataframeDrop"
     description = "Drop rows or columns from a DataFrame."
     inputs = {
         "df": {"type": "object", "description": "DataFrame to modify"},
@@ -197,8 +208,10 @@ class DataframeDrop(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe(name="DataframeDrop")
     def forward(self, df, inplace=False, **kwargs):
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("dataframe_drop", {
             "df_type": str(type(df).__name__),
             "inplace": inplace,
@@ -221,6 +234,7 @@ class DataframeDrop(Tool):
                 "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
             })
 
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return result
         except Exception as e:
             telemetry.log_event(trace, "error", {
@@ -229,6 +243,7 @@ class DataframeDrop(Tool):
             })
             raise
         finally:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
 
 
@@ -236,7 +251,7 @@ class DataframeDrop(Tool):
 # FILL
 # =====================================
 class DataframeFill(Tool):
-    name = "dataframe_fill"
+    name = "DataframeFill"
     description = "Fill missing values in a DataFrame."
     inputs = {
         "df": {"type": "object"},
@@ -253,8 +268,10 @@ class DataframeFill(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe(name="DataframeFill")
     def forward(self, df, inplace=False, **kwargs):
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("dataframe_fill", {
             "df_type": str(type(df).__name__),
             "inplace": inplace,
@@ -279,6 +296,7 @@ class DataframeFill(Tool):
                 "missing_values_after": str(result.isna().sum().sum()) if hasattr(result, 'isna') else "unknown"
             })
 
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return result
         except Exception as e:
             telemetry.log_event(trace, "error", {
@@ -287,6 +305,7 @@ class DataframeFill(Tool):
             })
             raise
         finally:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
 
 
@@ -294,7 +313,7 @@ class DataframeFill(Tool):
 # MERGE
 # =====================================
 class DataframeMerge(Tool):
-    name = "dataframe_merge"
+    name = "DataframeMerge"
     description = "Merge two DataFrames."
     inputs = {
         "left": {"type": "object"},
@@ -317,8 +336,10 @@ class DataframeMerge(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe(name="DataframeMerge")
     def forward(self, left, right, **kwargs):
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("dataframe_merge", {
             "left_type": str(type(left).__name__),
             "right_type": str(type(right).__name__),
@@ -337,8 +358,9 @@ class DataframeMerge(Tool):
             telemetry.log_event(trace, "success", {
                 "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
             })
-
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return result
+
         except Exception as e:
             telemetry.log_event(trace, "error", {
                 "error_type": str(type(e).__name__),
@@ -347,13 +369,15 @@ class DataframeMerge(Tool):
             raise
         finally:
             telemetry.finish_trace(trace)
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
+            pass
 
 
 # =====================================
 # TO NUMERIC
 # =====================================
 class DataframeToNumeric(Tool):
-    name = "dataframe_to_numeric"
+    name = "DataframeToNumeric"
     description = "Convert DataFrame column to numeric values."
     inputs = {
         "df": {"type": "object"},
@@ -366,9 +390,10 @@ class DataframeToNumeric(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-
+    @observe(name="DataframeToNumeric")
     def forward(self, df, column, errors='coerce', downcast=None):
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("dataframe_to_numeric", {
             "df_type": str(type(df).__name__),
             "column": column,
@@ -398,8 +423,9 @@ class DataframeToNumeric(Tool):
                 "result_shape": str(df_clean.shape) if hasattr(df_clean, 'shape') else "unknown",
                 "column_dtype_after": str(df_clean[column].dtype) if hasattr(df_clean, '__getitem__') else "unknown"
             })
-
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return df_clean
+
         except Exception as e:
             telemetry.log_event(trace, "error", {
                 "error_type": str(type(e).__name__),
@@ -408,3 +434,5 @@ class DataframeToNumeric(Tool):
             raise
         finally:
             telemetry.finish_trace(trace)
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
+            pass

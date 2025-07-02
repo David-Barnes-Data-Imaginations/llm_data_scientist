@@ -2,11 +2,12 @@ from smolagents import Tool
 import pandas as pd
 from src.states.shared_state import dataframe_store
 from src.client.telemetry import TelemetryManager
+from langfuse import observe, get_client
 telemetry = TelemetryManager()
 
 
 class CreateDataframe(Tool):
-    name = "create_dataframe"
+    name = "CreateDataframe"
     description = "Creates and stores a DataFrame from a list of dicts."
     inputs = {
         "data": {"type": "object", "description": "List of dictionaries (rows of data)"},
@@ -18,8 +19,10 @@ class CreateDataframe(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe(name="CreateDataframe")
     def forward(self, data: list, name: str = "df") -> str:
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("create_dataframe", {
             "data_length": len(data) if hasattr(data, '__len__') else "unknown",
             "name": name
@@ -39,7 +42,9 @@ class CreateDataframe(Tool):
                 "df_columns": str(list(df.columns)) if hasattr(df, 'columns') else "unknown"
             })
 
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return f"✅ Created DataFrame '{name}' with shape {df.shape}"
+
         except Exception as e:
             telemetry.log_event(trace, "error", {
                 "error_type": str(type(e).__name__),
@@ -47,11 +52,12 @@ class CreateDataframe(Tool):
             })
             raise
         finally:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
 
 
 class CopyDataframe(Tool):
-    name = "copy_dataframe"
+    name = "CopyDataframe"
     description = "Copies a DataFrame from one key to another."
     inputs = {
         "source_dataframe": {"type": "string", "description": "Name of the source DataFrame"},
@@ -63,8 +69,10 @@ class CopyDataframe(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe(name="CopyDataframe")
     def forward(self, source_dataframe: str, copy_name: str) -> str:
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("copy_dataframe", {
             "source_dataframe": source_dataframe,
             "copy_name": copy_name
@@ -81,6 +89,7 @@ class CopyDataframe(Tool):
                     "error_type": "ValueError",
                     "error_message": f"Source DataFrame '{source_dataframe}' not found."
                 })
+                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                 raise ValueError(f"❌ Source DataFrame '{source_dataframe}' not found.")
 
             telemetry.log_event(trace, "processing", {
@@ -94,18 +103,22 @@ class CopyDataframe(Tool):
                 "copy_shape": str(dataframe_store[copy_name].shape) if hasattr(dataframe_store[copy_name], 'shape') else "unknown"
             })
 
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return f"📄 DataFrame '{source_dataframe}' copied to '{copy_name}'"
+
         except Exception as e:
             telemetry.log_event(trace, "error", {
                 "error_type": str(type(e).__name__),
                 "error_message": str(e)
             })
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             raise
         finally:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
 
 class SaveCleanedDataframe(Tool):
-    name = "save_cleaned_dataframe"
+    name = "SaveCleanedDataframe"
     description = "Saves the cleaned DataFrame to a CSV in the sandbox."
     inputs = {
         "df": {"type": "object", "description": "The cleaned DataFrame"},
@@ -117,6 +130,7 @@ class SaveCleanedDataframe(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe(name="SaveCleanedDataframe")
     def forward(self, df: pd.DataFrame, filename: str = "tg_reviews_cleaned.csv") -> str:
         """
         Args:
@@ -127,6 +141,7 @@ class SaveCleanedDataframe(Tool):
             str: Confirmation message
         """
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("save_cleaned_dataframe", {
             "df_type": str(type(df).__name__),
             "filename": filename
@@ -149,6 +164,7 @@ class SaveCleanedDataframe(Tool):
 
             if self.sandbox:
                 self.sandbox.files.write(filename, csv_bytes)
+                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                 result = f"Saved cleaned DataFrame to sandbox file: {filename}"
             else:
                 with open(filename, "wb") as f:
@@ -159,12 +175,15 @@ class SaveCleanedDataframe(Tool):
                 "message": result
             })
 
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return result
         except Exception as e:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.log_event(trace, "error", {
                 "error_type": str(type(e).__name__),
                 "error_message": str(e)
             })
             raise
         finally:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)

@@ -1,6 +1,8 @@
 from smolagents import Tool
 from sqlalchemy import create_engine, text
 from src.client.telemetry import TelemetryManager
+from langfuse import observe, get_client
+
 
 class DatabaseConnect(Tool):
     name = "database_connect"
@@ -23,8 +25,10 @@ class DatabaseConnect(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe
     def forward(self) -> str:
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("database_connect", {
             "database": "sqlite:///data/tg_database.db"
         })
@@ -44,16 +48,20 @@ class DatabaseConnect(Tool):
                 "message": "Successfully connected to database"
             })
 
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return "Successfully connected to database: sqlite:///data/tg_database.db"
+
         except Exception as e:
             # Log error
             telemetry.log_event(trace, "error", {
                 "error_type": str(type(e).__name__),
                 "error_message": str(e)
             })
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return f"Failed to connect to database: {str(e)}"
         finally:
             # Always finish the trace
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
 
 class QuerySales(Tool):
@@ -92,10 +100,11 @@ class QuerySales(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-
+    @observe
     def forward(self, columns: str = "*", where_column: str = None, where_value: str = None,
                 limit: int = None, order_by: str = None) -> str:
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("query_sales", {
             "columns": columns,
             "where_column": where_column,
@@ -149,6 +158,7 @@ class QuerySales(Tool):
                             "error_type": "ValidationError",
                             "error_message": f"Invalid column: {col}"
                         })
+                        langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                         return f"Invalid column: {col}. Valid columns: gender, age, remuneration, spending_score, loyalty_points, education, language, platform, product, review, summary"
 
                 select_clause = ", ".join(mapped_cols)
@@ -177,6 +187,7 @@ class QuerySales(Tool):
                         "error_type": "ValidationError",
                         "error_message": f"Invalid where_column: {where_column}"
                     })
+                    langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                     return f"Invalid where_column: {where_column}"
 
                 query += f" WHERE {mapped_where_col} = :where_value"
@@ -242,6 +253,7 @@ class QuerySales(Tool):
                     "columns_returned": str(list(columns_returned))
                 })
 
+                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                 return output
 
         except Exception as e:
@@ -250,9 +262,11 @@ class QuerySales(Tool):
                 "error_type": str(type(e).__name__),
                 "error_message": str(e)
             })
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return f"Error querying review data: {str(e)}"
         finally:
             # Always finish the trace
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
 
 class QueryReviews(Tool):
@@ -294,9 +308,11 @@ class QueryReviews(Tool):
         super().__init__()
         self.sandbox = sandbox
 
+    @observe
     def forward(self, columns: str = "*", where_column: str = None, where_value: str = None,
                 limit: int = None, order_by: str = None) -> str:
         telemetry = TelemetryManager()
+        langfuse = get_client()
         trace = telemetry.start_trace("query_reviews", {
             "columns": columns,
             "where_column": where_column,
@@ -356,6 +372,7 @@ class QueryReviews(Tool):
                             "error_type": "ValidationError",
                             "error_message": f"Invalid column: {col}"
                         })
+                        langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                         return f"Invalid column: {col}. Valid columns: gender, age, remuneration, spending_score, loyalty_points, education, language, platform, product, review, summary"
 
                 select_clause = ", ".join(mapped_cols)
@@ -384,6 +401,7 @@ class QueryReviews(Tool):
                         "error_type": "ValidationError",
                         "error_message": f"Invalid where_column: {where_column}"
                     })
+                    langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                     return f"Invalid where_column: {where_column}"
 
                 query += f" WHERE {mapped_where_col} = :where_value"
@@ -426,6 +444,7 @@ class QueryReviews(Tool):
                     telemetry.log_event(trace, "success", {
                         "result": "no_data_found"
                     })
+                    langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                     return "No review data found for the specified criteria"
 
                 # Format results as string
@@ -449,6 +468,7 @@ class QueryReviews(Tool):
                     "columns_returned": str(list(columns_returned))
                 })
 
+                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
                 return output
 
         except Exception as e:
@@ -457,7 +477,9 @@ class QueryReviews(Tool):
                 "error_type": str(type(e).__name__),
                 "error_message": str(e)
             })
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return f"Error querying review data: {str(e)}"
+
         finally:
-            # Always finish the trace
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)

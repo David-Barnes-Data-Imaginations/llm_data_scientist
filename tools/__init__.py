@@ -15,11 +15,12 @@ from .data_structure_feature_engineering_tools import HandleMissingValues, Calcu
 from .database_tools import DatabaseConnect, QuerySales, QueryReviews
 from .dataframe_manipulation_tools import DataframeMelt, DataframeConcat, DataframeDrop, DataframeFill, DataframeMerge, DataframeToNumeric
 from .dataframe_storage import CreateDataframe, CopyDataframe
+from .help_tools import GetToolHelp
 # Import from documentation_tools.py
 from .documentation_tools import (
     DocumentLearningInsights,
     RetrieveSimilarChunks,
-    ValidateCleaningResults, GetToolHelp,
+    ValidateCleaningResults,
     SaveCleanedDataframe, RetrieveMetadata
 )
 
@@ -30,11 +31,10 @@ __all__ = [
     'CheckDataframe',
     'InspectDataframe',
 
-    
+    # Help Tools
+    'GetToolHelp',
+
     # Data structure feature engineering tools
-    'OneHotEncode',
-    'ApplyFeatureHashing',
-    'SmoteBalance',
     'HandleMissingValues',
     'CalculateSparsity',
     

@@ -16,43 +16,6 @@ agent_notes_store_path = "embeddings/agent_notes_store.json"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # for embeddings
 
 
-class GetToolHelp(Tool):
-    name = "GetToolHelp"
-    description = "Returns detailed help and usage examples for a tool by name."
-    inputs = {
-        "tool_name": {"type": "string", "description": "Name of the tool to get help on"}
-    }
-    output_type = "string"
-    help_notes = """ 
-    GetToolHelp: 
-    A tool that provides detailed help information and usage examples for any other tool in the system.
-    Use this when you need to understand how to use a specific tool or want more details about its functionality.
-
-    Example usage: 
-
-    help_text = GetToolHelp().forward(tool_name="retrieve_metadata")
-    """
-
-    def __init__(self, sandbox=None):
-        super().__init__()
-        self.sandbox = sandbox
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("GetToolHelp")
-        self.trace.finish()
-
-    @observe(name="GetToolHelp")
-    def forward(self, tool_name: str) -> str:
-        langfuse = get_client()
-        # Dynamically check all tool classes you registered
-        for tool_cls in Tool.__subclasses__():
-            if tool_cls.name == tool_name:
-                print("tool_cls.name", "help_notes")
-                return getattr(tool_cls, "help_notes", "No help notes available for this tool.")
-
-        langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-        return "Tool not found."
-
-
 class RetrieveMetadata(Tool):
     name = "RetrieveMetadata"
     description = "Search the dataset metadata for relevant information"
@@ -359,8 +322,6 @@ class ValidateCleaningResults(Tool):
             dict: { "logical_issues": [...], "stat_summary": {...}, "suggested_fixes": [...] }
         """
         langfuse = get_client()
-        if not self.sandbox:
-            return "Error: Sandbox not available"
 
         index_path = "insights/chunk_index.txt"
         current_index = int(self.sandbox.files.read(index_path).decode().strip())

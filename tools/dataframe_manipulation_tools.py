@@ -119,6 +119,7 @@ class DataframeConcat(Tool):
         "objs": {"type": "object", "description": "First DataFrame to concatenate"},
         "frame": {"type": "object", "description": "Second DataFrames to concatenate"},
         "axis": {"type": "integer", "optional": True, "nullable": True},
+        "ignore_index": {"type": "boolean", "optional": True, "nullable": True},
 
     }
     output_type = "object"
@@ -153,21 +154,30 @@ class DataframeConcat(Tool):
         self.sandbox = sandbox
 
     @observe(name="DataframeConcat")
-    def forward(self, objs, axis: object, join: str, ignore_index: bool, keys=None, levels=None, names=None, verify_integrity=False, sort=False, copy=True ):
+    def forward(self, objs: object, frame: object, axis: int = 0, ignore_index: bool = False, ):
         telemetry = TelemetryManager()
         langfuse = get_client()
         trace = telemetry.start_trace("dataframe_concat", {
-            "objs_count": len(objs) if hasattr(objs, '__len__') else "unknown",
-
+            "objs": objs, "frame": frame, "axis": axis, "ignore_index": ignore_index,
         })
 
         try:
             telemetry.log_event(trace, "processing", {
                 "step": "concatenating_dataframes",
-                "objs_types": str([type(obj).__name__ for obj in objs]) if hasattr(objs, '__iter__') else "unknown"
+                "objs_types": str([type(objs).__name__]) if hasattr(objs, '__iter__') else "unknown"
             })
+            # Build the melt parameters dict, filtering out None values
+            concat_params = {
+                "frame": frame,
+                "objs": objs,
+            }
 
-            result = pd.concat(objs, axis, join, ignore_index, keys, levels, verify_integrity, sort, copy)
+            if axis is not None:
+                concat_params["axis"] = axis
+
+            concat_params["axis"] = axis
+
+            result = pd.concat(**concat_params)
 
             telemetry.log_event(trace, "success", {
                 "result_shape": str(result.shape) if hasattr(result, 'shape') else "unknown"
@@ -183,7 +193,7 @@ class DataframeConcat(Tool):
         finally:
             langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
-            pass
+
 
 
 # =====================================
@@ -416,8 +426,6 @@ class DataframeToNumeric(Tool):
                     "column": column
                 })
                 df_clean[column] = df_clean[column].astype(str).str.replace('$', '').str.replace(',', '')
-
-            df_clean[column] = pd.to_numeric(df_clean[column], errors=errors, downcast=downcast)
 
             telemetry.log_event(trace, "success", {
                 "result_shape": str(df_clean.shape) if hasattr(df_clean, 'shape') else "unknown",

@@ -21,6 +21,7 @@ class CreateDataframe(Tool):
 
     @observe(name="CreateDataframe")
     def forward(self, data: list, name: str = "df") -> str:
+        from src.states.shared_state import dataframe_store
         telemetry = TelemetryManager()
         langfuse = get_client()
         trace = telemetry.start_trace("create_dataframe", {

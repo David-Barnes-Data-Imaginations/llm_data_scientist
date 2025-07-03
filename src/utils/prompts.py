@@ -21,6 +21,8 @@ Process data in 'Thought:', 'Code:', and 'Observation:' sequences.
 Use `document_learning_insights()` after each chunk to build your knowledge base.
 Query past insights with retrieval tools before analyzing new chunks.
 
+You must process the data in chunks of 200 rows. The QuerySales and QueryReviews tools are available for this purpose.
+Once you have finished cleaning each chunk, use the `save_cleaned_dataframe()` tool to save the cleaned data.
 at the end, only when you have your answer, return your final answer.
 <code>
 final_answer("YOUR_ANSWER_HERE")
@@ -76,7 +78,7 @@ Do not worry about counting chunks — this is handled for you.
 Available Libraries:
 - Data Processing: pandas, sqlalchemy
 - Analysis: sklearn, statistics
-- Utilities: random, itertools, queue, math
+- Utilities: math
 
 ## Success Criteria
 - All NaN values appropriately handled

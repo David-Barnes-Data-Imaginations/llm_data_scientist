@@ -80,7 +80,8 @@ class ValidateData(Tool):
     # You can then perform operations on the validated DataFrame
     df.drop(columns=["bad_col"], inplace=True)
     """
-
+    from src.states.shared_state import dataframe_store
+    from src.utils.validate_schema import DataValidator
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox

@@ -23,12 +23,14 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # Global memory (replace these with a controlled registry in production / CA via the below 'with open' etc..)
 global sandbox, agent, chat_interface, metadata_embedder
+import e2b_code_interpreter
 
 # In your main function:
 def main():
 
+    # Create E2B sandbox directly (following newer E2B examples)
     sandbox = Sandbox()
-
+    
     # Upload dataset to sandbox
     with open("./src/data/tg_database.db", "rb") as f:
         dataset_path_in_sandbox = sandbox.files.write("/data/tg_database.db", f)
@@ -37,9 +39,21 @@ def main():
     with open("./src/states/agent_step_log.jsonl", "rb") as f:
         sandbox.files.write("/states/agent_step_log.jsonl", f)
 
-    # Install required packages in sandbox
-    # ✅ Install dependencies
-    sandbox.commands.run("pip install langfuse smolagents faiss-cpu openai numpy sqlalchemy pandas imbalanced-learn langfuse opentelemetry-api opentelemetry-sdk")
+
+    # Install required packages in E2B sandbox
+    sandbox.commands.run("pip install langfuse smolagents faiss-cpu openai numpy sqlalchemy pandas imbalanced-learn scikit-learn opentelemetry-api opentelemetry-sdk e2b-code-interpreter")
+    sandbox.commands.run("import pandas as pd"
+                         "from smolagents import Tool"
+                         "from src.client.telemetry import TelemetryManager"
+                         "from langfuse import observe, get_client" 
+                         "from pydantic import ValidationError"
+                         "from typing import List, Dict, Any"
+                         "from sqlalchemy import create_engine, text"
+                         "from openai import OpenAI"
+                         "from langfuse import Langfuse"
+                         "import os"
+                         "import json"
+                         "import faiss")
 
     # ✅ Write Langfuse config to a Python file in the sandbox
     langfuse_setup_code = f"""
@@ -85,7 +99,7 @@ def main():
     # Initialize metadata embedder and embed metadata file
     print("📚 Setting up metadata embeddings...")
     metadata_embedder = MetadataEmbedder(sandbox)
-    result = metadata_embedder.embed_metadata_file("/data/metadata/turtle_games_dataset_metadata.md")
+    result = metadata_embedder.embed_metadata_file("./src/data/metadata/turtle_games_dataset_metadata.md")
     print(f"Metadata embedding result: {result}")
 
     # Create agent, tool factory and tools

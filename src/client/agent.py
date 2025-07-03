@@ -5,7 +5,9 @@ from smolagents import CodeAgent, PromptTemplates
 from smolagents.models import LiteLLMModel
 from typing import List
 from smolagents import Tool
-from src.utils.prompts import CA_SYSTEM_PROMPT, TASK_PROMPT
+from src.utils.prompts import CA_SYSTEM_PROMPT, TASK_PROMPT, PLANNING_INITIAL_FACTS, PLANNING_INITIAL_PLAN, \
+    PLANNING_UPDATE_FACTS_PRE, PLANNING_UPDATE_FACTS_POST, PLANNING_UPDATE_PLAN_PRE, PLANNING_UPDATE_PLAN_POST, \
+    CA_MAIN_PROMPT, TCA_MAIN_PROMPT
 import litellm
 from smolagents.agent_types import AgentText
 
@@ -16,22 +18,19 @@ from smolagents.local_python_executor import LocalPythonExecutor
 prompt_templates = {
     "system_prompt": CA_SYSTEM_PROMPT,
     "planning": {
-        "initial_facts": CA_MAIN_PROMPT,  # If you're using TCA_MAIN_PROMPT here
-        "initial_plan": "",                # You can leave unused parts blank
-        "update_facts_pre_messages": "",
-        "update_facts_post_messages": "",
-        "update_plan_pre_messages": "",
-        "update_plan_post_messages": ""
+        "initial_facts": PLANNING_INITIAL_FACTS,
+        "initial_plan": PLANNING_INITIAL_PLAN,
+        "update_facts_pre_messages": PLANNING_UPDATE_FACTS_PRE,
+        "update_facts_post_messages": PLANNING_UPDATE_FACTS_POST,
+        "update_plan_pre_messages": PLANNING_UPDATE_PLAN_PRE,
+        "update_plan_post_messages": PLANNING_UPDATE_PLAN_POST
     },
     "managed_agent": {
-        "task": TASK_PROMPT,
+        "task": CA_MAIN_PROMPT,
         "report": ""
-    },
-    "final_answer": {
-        "pre_messages": "",
-        "post_messages": ""
     }
 }
+
 
 # StepController handles step management by adding a time delay, alongside the manual controls
 class StepController:
@@ -59,14 +58,14 @@ class StepController:
 class CustomAgent:
     """Custom agent wrapper that configures ToolCallingAgent with our tools and settings"""
 
-    def __init__(self, tools: List[Tool] = None, sandbox=None, metadata_embedder=None, model_id=None):
+    def __init__(self, tools: List[Tool] = None, sandbox=None, metadata_embedder=None, model_id=None, executor=None):
         self.metadata_embedder = metadata_embedder
         self.tools = tools or []
 
         try:
             test_response = litellm.completion(
                 model="ollama/DeepSeek-R1",
-                messages=[{"role": "user", "content": TCA_MAIN_PROMPT }],
+                messages=[{"role": "user", "content": "Hello, i'm just joining now, i'll be 1 minute" }],
                 api_base="http://localhost:11434",
                 stream=False
             )
@@ -87,18 +86,31 @@ class CustomAgent:
 
 
     # Optionally raise or fallback here
-        self.agent = CodeAgent(
-            tools=self.tools,
-            model=model,
-            # Remove custom prompt templates for now to use defaults
-            # prompt_templates=prompt_templates,
-            executor_type="e2b",
-            additional_authorized_imports=["pandas, sqlalchemy, "],
-            add_base_tools=True,
-            max_steps=30,
-            # planning_interval=4,  # CodeAgent doesn't use planning
-            verbosity_level=2,
-        )
+        # Use custom executor if provided, otherwise default to e2b
+        if executor:
+            self.agent = CodeAgent(
+                tools=self.tools,
+                model=model,
+                # Remove custom prompt templates for now to use defaults
+                # prompt_templates=prompt_templates,
+                executor=executor,
+                additional_authorized_imports=["pandas sqlalchemy sklearn statistics math "],
+                use_structured_outputs_internally=True,
+                add_base_tools=True,
+                max_steps=30,
+                verbosity_level=2,
+            )
+        else:
+            self.agent = CodeAgent(
+                tools=self.tools,
+                model=model,
+                executor_type="e2b",
+                additional_authorized_imports=["pandas sqlalchemy "],
+                use_structured_outputs_internally=True,
+                add_base_tools=True,
+                max_steps=30,
+                verbosity_level=2,
+            )
 
         self.telemetry = None
         self.controller = StepController()

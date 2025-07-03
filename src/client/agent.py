@@ -1,16 +1,36 @@
 import datetime
 import asyncio  # Add this
 import json     # Add this
-from smolagents import ToolCallingAgent
+from smolagents import CodeAgent, PromptTemplates
+from smolagents.models import LiteLLMModel
 from typing import List
 from smolagents import Tool
-from src.utils.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
-T
+from src.utils.prompts import CA_SYSTEM_PROMPT, TASK_PROMPT
+import litellm
+from smolagents.agent_types import AgentText
+
+
+from smolagents.local_python_executor import LocalPythonExecutor
+
 # Prompt templates
-templates = {
-    "system": TCA_SYSTEM_PROMPT,
-    "main": TCA_MAIN_PROMPT,
-    "chat": CHAT_PROMPT
+prompt_templates = {
+    "system_prompt": CA_SYSTEM_PROMPT,
+    "planning": {
+        "initial_facts": CA_MAIN_PROMPT,  # If you're using TCA_MAIN_PROMPT here
+        "initial_plan": "",                # You can leave unused parts blank
+        "update_facts_pre_messages": "",
+        "update_facts_post_messages": "",
+        "update_plan_pre_messages": "",
+        "update_plan_post_messages": ""
+    },
+    "managed_agent": {
+        "task": TASK_PROMPT,
+        "report": ""
+    },
+    "final_answer": {
+        "pre_messages": "",
+        "post_messages": ""
+    }
 }
 
 # StepController handles step management by adding a time delay, alongside the manual controls
@@ -43,28 +63,71 @@ class CustomAgent:
         self.metadata_embedder = metadata_embedder
         self.tools = tools or []
 
-        if model_id is None:
-            model_id = "ollama://DeepSeek-R1-Distill"
+        try:
+            test_response = litellm.completion(
+                model="ollama/DeepSeek-R1",
+                messages=[{"role": "user", "content": TCA_MAIN_PROMPT }],
+                api_base="http://localhost:11434",
+                stream=False
+            )
+            print("✅ Ollama test response:", test_response['choices'][0]['message']['content'])
+        except Exception as e:
+            print("❌ Ollama sanity check failed:", str(e))
 
-        self.agent = ToolCallingAgent(
+        # model_id=f"ollama_chat/{model_id}" — this is apparently incorrect for newer LiteLLM + Ollama
+        # ✅ Fix:
+        model_id = "ollama/DeepSeek-R1"  # ✅ Correct LiteLLM + Ollama model name
+
+        model = LiteLLMModel(
+            model_id=model_id,
+            api_base="http://localhost:11434",  # still valid
+            api_key="dummy",                   # fine for Ollama
+            num_ctx=8192                        # fine to override context
+        )
+
+
+    # Optionally raise or fallback here
+        self.agent = CodeAgent(
             tools=self.tools,
-            model=model_id,
-            system_prompt=templates["system"],
-            prompt=templates["main"],
-            chat_prompt=templates["chat"],
-            add_base_tools=True,
+            model=model,
+            # Remove custom prompt templates for now to use defaults
+            # prompt_templates=prompt_templates,
             executor_type="e2b",
+            additional_authorized_imports=["pandas, sqlalchemy, "],
+            add_base_tools=True,
             max_steps=30,
-            planning_interval=4,
+            # planning_interval=4,  # CodeAgent doesn't use planning
             verbosity_level=2,
-            stream_outputs=True,
         )
 
         self.telemetry = None
         self.controller = StepController()
 
-    def run(self, task: str):
-        return self.agent.run(task)
+    def run(self, task: str, images=None, stream=False, reset=False, additional_args=None):
+        # Pass through to the underlying agent with proper streaming support
+        if stream:
+            return self.agent.run(task, stream=True)
+        else:
+            return self.agent.run(task)
+
+    def cleanup(self):
+        """Clean up agent resources including E2B sandbox."""
+        try:
+            if hasattr(self.agent, 'cleanup'):
+                self.agent.cleanup()
+                print("✅ Agent cleanup completed")
+            else:
+                print("ℹ️ Agent doesn't have cleanup method")
+        except Exception as e:
+            print(f"⚠️ Error during agent cleanup: {e}")
+
+    def __enter__(self):
+        """Support for context manager usage."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Cleanup when exiting context manager."""
+        self.cleanup()
 
     def log_agent_step(self, thought: str, tool: str = "", params: dict = None, result: str = ""):
         event = {
@@ -80,35 +143,41 @@ class CustomAgent:
         print("🧠 AGENT STEP saved to log.")
         return event
 
-    async def agent_runner(self, task: str):
-        trace = self.agent.run(task)
-        for step in trace.steps:
-            if hasattr(step, "tool_name"):
-                self.log_agent_step(
-                    thought=getattr(step, "thought", ""),
-                    tool=step.tool_name,
-                    params=step.tool_input,
-                    result=step.observation
-                )
-                yield {
-                    "thought": getattr(step, "thought", ""),
-                    "tool_name": step.tool_name,
-                    "tool_input": step.tool_input,
-                    "observation": step.observation
-                }
-                await self.controller.wait()
-            elif hasattr(step, "message"):
-                yield {
-                    "thought": step.message.content
-                }
-                await self.controller.wait()
-            pass
+async def agent_runner(self, task: str):
+    reasoning_preface = AgentText(text="Can you reason through this step by step before taking any action?\n" + task)
+    trace = self.agent.run(reasoning_preface)
 
-    def toggle_manual_mode(self, manual: bool):
-        self.controller.toggle_mode(manual)
+    for i, step in enumerate(trace.steps):
+        if hasattr(step, "tool_name"):
+            self.log_agent_step(
+                thought=getattr(step, "thought", ""),
+                tool=step.tool_name,
+                params=step.tool_input,
+                result=step.observation
+            )
+            yield {
+                "thought": getattr(step, "thought", ""),
+                "tool_name": step.tool_name,
+                "tool_input": step.tool_input,
+                "observation": step.observation
+            }
+        elif hasattr(step, "message"):
+            yield {
+                "thought": step.message.content
+            }
 
-    def next_step(self):
-        self.controller.next()
+        # Manual mode pause or 0.5s fallback
+        await self.controller.wait()
+
+        # Slight breathing room after first step
+        if i == 0:
+            await asyncio.sleep(1.2)
+
+def toggle_manual_mode(self, manual: bool):
+    self.controller.toggle_mode(manual)
+
+def next_step(self):
+    self.controller.next()
 
 class ToolFactory:
     """Factory for creating all tools with proper dependencies"""
@@ -125,10 +194,16 @@ class ToolFactory:
         from tools.database_tools import DatabaseConnect, QuerySales, QueryReviews
         from tools.documentation_tools import (DocumentLearningInsights,
                                                RetrieveMetadata, RetrieveSimilarChunks,
-                                               ValidateCleaningResults, SaveCleanedDataframe, GetToolHelp)
+                                               ValidateCleaningResults, SaveCleanedDataframe)
         from tools.data_structure_feature_engineering_tools import CalculateSparsity, HandleMissingValues
         from tools.dataframe_manipulation_tools import DataframeMelt, DataframeConcat, DataframeDrop, DataframeFill, DataframeMerge, DataframeToNumeric
         from tools.dataframe_storage import CreateDataframe, CopyDataframe
+        from tools.help_tools import GetToolHelp
+        from tools.code_tools import RunCodeRaiseErrors, RunSQL
+        from smolagents import (
+            WebSearchTool,
+            VisitWebpageTool,
+        )
 
         # Create instances of your custom tools
         tools = [
@@ -154,6 +229,10 @@ class ToolFactory:
             DataframeToNumeric(sandbox=self.sandbox),
             CreateDataframe(sandbox=self.sandbox),
             CopyDataframe(sandbox=self.sandbox),
-            GetToolHelp(sandbox=self.sandbox),
+            GetToolHelp(sandbox=self.sandbox, metadata_embedder=self.metadata_embedder),
+            RunCodeRaiseErrors(sandbox=self.sandbox),
+            RunSQL(sandbox=self.sandbox),
+            WebSearchTool(),
+            VisitWebpageTool(),
         ]
         return tools

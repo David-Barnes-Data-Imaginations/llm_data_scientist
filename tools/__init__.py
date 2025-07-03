@@ -16,6 +16,7 @@ from .database_tools import DatabaseConnect, QuerySales, QueryReviews
 from .dataframe_manipulation_tools import DataframeMelt, DataframeConcat, DataframeDrop, DataframeFill, DataframeMerge, DataframeToNumeric
 from .dataframe_storage import CreateDataframe, CopyDataframe
 from .help_tools import GetToolHelp
+from .code_tools import RunCodeRaiseErrors, RunSQL
 # Import from documentation_tools.py
 from .documentation_tools import (
     DocumentLearningInsights,
@@ -33,6 +34,10 @@ __all__ = [
 
     # Help Tools
     'GetToolHelp',
+
+    # Code Tools
+    'RunCodeRaiseErrors',
+    'RunSQL',
 
     # Data structure feature engineering tools
     'HandleMissingValues',

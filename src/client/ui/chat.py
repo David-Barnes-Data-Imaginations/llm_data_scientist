@@ -360,7 +360,7 @@ class GradioUI:
         # Your existing chat UI code here
         pass
 
-    def log_user_message(self, text_input):
+    def log_user_message(self, text_input, file_uploads_log=None):
         import gradio as gr
 
         return text_input, gr.Button(interactive=False)

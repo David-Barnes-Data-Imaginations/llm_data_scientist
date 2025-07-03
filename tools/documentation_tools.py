@@ -78,7 +78,7 @@ class RetrieveMetadata(Tool):
         return response
 
 class DocumentLearningInsights(Tool):
-    name = "document_learning_insights"
+    name = "DocumentLearningInsights"
     description = "Logs and embeds the agent's insights from a data chunk, storing both the markdown/JSON summaries and vector embeddings."
     inputs = {
         "notes": {"type": "string", "description": "The agent's reflections on the current chunk"}

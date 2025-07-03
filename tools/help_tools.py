@@ -1,89 +1,116 @@
 from smolagents import Tool
 from src.client.telemetry import TelemetryManager
-from openai import OpenAI
 from langfuse import observe, get_client
 
 
 class GetToolHelp(Tool):
     name = "GetToolHelp"
-    description = "Returns detailed help and usage examples for a tool by name."
+    description = "Get detailed help and usage examples for tools using semantic search on embedded help notes."
     inputs = {
-        "tool_name": {"type": "string", "description": "Name of the tool to get help on"}
+        "query": {"type": "string", "description": "Tool name or description of what you want to do (e.g. 'merge dataframes' or 'QuerySales')"}
     }
     output_type = "string"
     help_notes = """ 
     GetToolHelp: 
-    A tool that provides detailed help information and usage examples for any other tool in the system.
-    Use this when you need to understand how to use a specific tool or want more details about its functionality.
+    A tool that provides detailed help information and usage examples for tools using semantic search.
+    Instead of exact tool names, you can describe what you want to do and it will find relevant tools.
+    Uses embeddings to match your query with the most relevant tool help documentation.
 
     Example usage: 
 
-    help_text = GetToolHelp().forward(tool_name="retrieve_metadata")
+    # Search by tool name
+    help_text = GetToolHelp(query="QuerySales")
+    
+    # Search by functionality
+    help_text = GetToolHelp(query="merge two dataframes")
+    
+    # Search by problem description
+    help_text = GetToolHelp(query="how to handle missing values")
     """
 
-    def __init__(self, sandbox=None):
+    def __init__(self, sandbox=None, metadata_embedder=None):
         super().__init__()
         self.sandbox = sandbox
+        self.metadata_embedder = metadata_embedder
         self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("GetToolHelp")
-        self.trace.finish()
 
     @observe(name="GetToolHelp")
-    def forward(self, tool_name: str) -> str:
+    def forward(self, query: str) -> str:
+        """Get tool help using semantic search on embedded help notes."""
+        telemetry = TelemetryManager()
         langfuse = get_client()
-        # Dynamically check all tool classes you registered
-        for tool_cls in Tool.__subclasses__():
-            if tool_cls.name == tool_name:
-                print("tool_cls.name", "help_notes")
-                return getattr(tool_cls, "help_notes", "No help notes available for this tool.")
+        trace = telemetry.start_trace("get_tool_help", {
+            "query": query
+        })
 
-        langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-        return "Tool not found."
+        try:
+            if not self.metadata_embedder:
+                # Fallback to simple string matching if no embedder available
+                for tool_cls in Tool.__subclasses__():
+                    if hasattr(tool_cls, 'name') and tool_cls.name.lower() == query.lower():
+                        help_notes = getattr(tool_cls, "help_notes", "No help notes available.")
+                        return f"Tool: {tool_cls.name}\nDescription: {tool_cls.description}\n\nHelp Notes:\n{help_notes}"
+                
+                return f"Tool '{query}' not found. Available tools: {[tool.name for tool in Tool.__subclasses__() if hasattr(tool, 'name')]}"
 
-"""
-class AskGPT(Tool):
-    name = "AskGPT"
-    description = "Allows you to ask ChatGPT for help with a specific question if you get stuck."
-    inputs = {
-        "question": {"type": "string", "description": "A short description of the problem you are facing."}
-    }
-    output_type = "string"
-    help_notes =  
-    AskGPT:
-    Use this tool when you are stuck and need help solving a specific problem.
-    Be clear and concise in your question, and include any relevant tool names or observed errors.
-    
+            telemetry.log_event(trace, "processing", {
+                "step": "searching_tool_help",
+                "query": query
+            })
 
-    def __init__(self, sandbox=None):
-        super().__init__()
-        self.sandbox = sandbox
-        self.telemetry = TelemetryManager()
+            # Use embeddings to search for relevant tool help
+            search_results = self.metadata_embedder.search_chunks(
+                query=f"tool help: {query}",
+                top_k=3,
+                similarity_threshold=0.7
+            )
 
-    @observe(name="AskGPT")
-    def forward(self, question: str) -> str:
-        from langfuse import Langfuse
+            if not search_results:
+                # Fallback: try broader search
+                search_results = self.metadata_embedder.search_chunks(
+                    query=query,
+                    top_k=5,
+                    similarity_threshold=0.5
+                )
 
-        # Step 1: Collect all tool descriptions
-        tool_info = []
-        for tool_cls in Tool.__subclasses__():
-            if hasattr(tool_cls, "name") and hasattr(tool_cls, "description"):
-                tool_info.append(f"{tool_cls.name}: {tool_cls.description}")
+            if search_results:
+                # Format the results
+                help_content = "Relevant Tool Help:\n\n"
+                for i, result in enumerate(search_results, 1):
+                    chunk_text = result.get('text', '')
+                    similarity = result.get('similarity', 0)
+                    
+                    help_content += f"Result {i} (similarity: {similarity:.3f}):\n"
+                    help_content += f"{chunk_text}\n\n"
+                    help_content += "-" * 50 + "\n\n"
 
-        tool_summary = "\ n".join(tool_info)
+                telemetry.log_event(trace, "success", {
+                    "results_found": len(search_results),
+                    "best_similarity": search_results[0].get('similarity', 0) if search_results else 0
+                })
 
-        # Step 2: Combine with user question
-        composed_prompt = f
-        The agent has access to the following tools:
-        {tool_summary}
+                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
+                return help_content
+            else:
+                # No results found
+                fallback_msg = f"No tool help found for '{query}'. Try being more specific or using exact tool names.\n\n"
+                fallback_msg += "Available tools:\n"
+                
+                # List available tools
+                for tool_cls in Tool.__subclasses__():
+                    if hasattr(tool_cls, 'name') and hasattr(tool_cls, 'description'):
+                        fallback_msg += f"- {tool_cls.name}: {tool_cls.description}\n"
 
-        The agent is stuck and has asked the following question:
-        "{question}"
+                return fallback_msg
 
-        Please respond with a helpful suggestion or code snippet.
-        
+        except Exception as e:
+            error_message = f"Error searching tool help: {str(e)}"
+            telemetry.log_event(trace, "error", {
+                "error_type": str(type(e).__name__),
+                "error_message": str(e)
+            })
+            return error_message
+        finally:
+            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
+            telemetry.finish_trace(trace)
 
-        # Step 3: Call GPT (placeholder logic)
-        # You should replace this with your actual OpenAI/GPT API call
-        print("[AskGPT Prompt]\n", composed_prompt)
-        return "(This is where ChatGPT would respond.)"
-"""

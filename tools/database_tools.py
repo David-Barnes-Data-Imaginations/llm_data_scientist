@@ -5,7 +5,7 @@ from langfuse import observe, get_client
 
 
 class DatabaseConnect(Tool):
-    name = "database_connect"
+    name = "DatabaseConnect"
     description = "Establish database connection to the turtle games database and test connectivity"
     inputs = {}
     output_type = "string"
@@ -65,7 +65,7 @@ class DatabaseConnect(Tool):
             telemetry.finish_trace(trace)
 
 class QuerySales(Tool):
-    name = "query_sales"
+    name = "QuerySales"
     description = """Query sales data from the database with flexible filtering and column selection.
 
     Available columns: Product, Ranking, Platform, Year, Genre, Publisher, NA_Sales, EU_Sales, Global_Sales
@@ -270,7 +270,7 @@ class QuerySales(Tool):
             telemetry.finish_trace(trace)
 
 class QueryReviews(Tool):
-    name = "query_reviews"
+    name = "QueryReviews"
     description = """Query review data from the database with flexible filtering and column selection.
 
     Available columns: gender, age, remuneration (k£), spending_score (1-100), loyalty_points, 

@@ -103,7 +103,7 @@ def pull_model(model_name: str, host: str = "localhost", port: int = 11434) -> b
 
 def generate_completion(
         prompt: str,
-        model: str = "deepseek-r1",
+        model: str = "DeepSeek-R1",
         host: str = "localhost",
         port: int = 11434,
         stream: bool = True
@@ -134,7 +134,7 @@ def generate_completion(
 
 def chat_completion(
         messages: List[Dict],
-        model: str = "deepseek-r1",
+        model: str = "DeepSeek-R1",
         host: str = "localhost",
         port: int = 11434,
         stream: bool = False

@@ -11,7 +11,7 @@ from src.client.telemetry import TelemetryManager
 telemetry = TelemetryManager()
 
 class ListVariables(Tool):
-    name = "list_variables"
+    name = "ListVariables"
     description = "Lists all known global variables and their types. You can use this to help you keep track!"
     help_notes = """ 
     ListVariables: 
@@ -57,7 +57,7 @@ class ListVariables(Tool):
             telemetry.finish_trace(trace)
 
 class ValidateData(Tool):
-    name = "validate_data"
+    name = "ValidateData"
     description = "Validates data against a schema and returns cleaned DataFrame and error list."
     inputs = {
         "chunk": {"type": "object", "description": "DataFrame chunk to validate"},
@@ -186,7 +186,7 @@ class ValidateData(Tool):
 
 @observe
 class AnalyzePatterns(Tool):
-    name = "analyze_patterns"
+    name = "AnalyzePatterns"
     description = "Analyzes specific patterns in the data chunk based on the specified analysis type."
     inputs = {
         "chunk": {"type": "object", "description": "object containing the data"},
@@ -272,7 +272,7 @@ class AnalyzePatterns(Tool):
         return patterns
 
 class CheckDataframe(Tool):
-    name = "check_dataframe"
+    name = "CheckDataframe"
     description = "Inspects a pandas DataFrame for any non-numeric, NaN, or infinite values."
     inputs = {
         "chunk": {"type": "string", "description": "dataframe to be checked"}
@@ -346,7 +346,7 @@ class CheckDataframe(Tool):
         return "DataFrame validation passed successfully"
 
 class InspectDataframe(Tool):
-    name = "inspect_dataframe"
+    name = "InspectDataframe"
     description = "Inspects and provides a comprehensive overview of a pandas DataFrame."
     inputs = {
         "df": {"type": "object", "description": "The DataFrame to inspect and analyze"}

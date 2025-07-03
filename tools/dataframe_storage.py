@@ -11,7 +11,7 @@ class CreateDataframe(Tool):
     description = "Creates and stores a DataFrame from a list of dicts."
     inputs = {
         "data": {"type": "object", "description": "List of dictionaries (rows of data)"},
-        "name": {"type": "string", "description": "Name to store the DataFrame under"}
+        "name": {"type": "string", "description": "Name to store the DataFrame under", "nullable": True}
     }
     output_type = "string"
 

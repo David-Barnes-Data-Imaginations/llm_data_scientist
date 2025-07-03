@@ -17,8 +17,9 @@ LANGFUSE_AUTH=base64.b64encode(f"{LANGFUSE_PUBLIC_KEY}:{LANGFUSE_SECRET_KEY}".en
 # Get API key from host env
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = 'host="https://cloud.langfuse.com' # EU data region
-os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Basic {LANGFUSE_AUTH}"
+# Temporarily disable telemetry to focus on tool parsing issues
+# os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "https://cloud.langfuse.com" # EU data region
+# os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Basic {LANGFUSE_AUTH}"
 
 # Global memory (replace these with a controlled registry in production / CA via the below 'with open' etc..)
 global sandbox, agent, chat_interface, metadata_embedder
@@ -33,7 +34,7 @@ def main():
         dataset_path_in_sandbox = sandbox.files.write("/data/tg_database.db", f)
     with open("./src/data/metadata/turtle_games_dataset_metadata.md", "r") as f:
         metadata_path_in_sandbox = sandbox.files.write("/data/metadata/turtle_games_dataset_metadata.md", f)
-    with open("./states/agent_step_log.jsonl", "rb") as f:
+    with open("./src/states/agent_step_log.jsonl", "rb") as f:
         sandbox.files.write("/states/agent_step_log.jsonl", f)
 
     # Install required packages in sandbox
@@ -53,6 +54,7 @@ def main():
         public_key=\"{LANGFUSE_PUBLIC_KEY}\",
         host=\"https://cloud.langfuse.com\"
     )
+    langfuse.__init__(LANFUSE_SECRET_KEY, LANFUSE_PUBLIC_KEY, host="https://cloud.langfuse.com")
     """
 
     # Write this config to a file inside the sandbox
@@ -63,14 +65,17 @@ def main():
     sandbox.commands.run(f"echo 'OPENAI_API_KEY={openai_api_key}' >> ~/.bashrc")
     sandbox.commands.run(f"export OPENAI_API_KEY={openai_api_key}")
 
+    sandbox.commands.run(f"echo 'HF_TOKEN={HF_TOKEN}' >> ~/.bashrc")
+    sandbox.commands.run(f"export HF_TOKEN={HF_TOKEN}")
+
     sandbox.commands.run(f"echo 'LANGFUSE_SECRET_KEY={LANGFUSE_SECRET_KEY}' >> ~/.bashrc")
     sandbox.commands.run(f"export LANGFUSE_SECRET_KEY={LANGFUSE_SECRET_KEY}")
     
     # Also set OTEL environment variables in sandbox
-    sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_ENDPOINT=host=https://cloud.langfuse.com >> ~/.bashrc")
+    sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com' >> ~/.bashrc")
     sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic {LANGFUSE_AUTH}' >> ~/.bashrc")
     sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com")
-    sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_HEADERS='Authorization=Basic {LANGFUSE_AUTH}'")
+    sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic {LANGFUSE_AUTH}")
     
     # Verify environment variables are set
     sandbox.commands.run("echo OPENAI_API_KEY is set as: $OPENAI_API_KEY")
@@ -93,11 +98,12 @@ def main():
     help_result = metadata_embedder.embed_tool_help_notes(tools)
     print(f"Tool help embedding result: {help_result}")
 
+    # Create agent with context manager support for cleanup
     agent = CustomAgent(
         tools=tools,
         sandbox=sandbox,
         metadata_embedder=metadata_embedder,
-        model_id="ollama://DeepSeek-R1-Distill"
+        model_id="DeepSeek-R1"
     )
     agent.telemetry = TelemetryManager()
 
@@ -107,8 +113,16 @@ def main():
 
     print("✅ Application startup complete!")
 
-    # Launch the interface
-    ui.launch(share=False, server_port=7860)
+    try:
+        # Launch the interface
+        ui.launch(share=False, server_port=7860)
+    except KeyboardInterrupt:
+        print("\n🛑 Received shutdown signal...")
+    finally:
+        # Cleanup agent resources
+        print("🧹 Cleaning up agent resources...")
+        agent.cleanup()
+        print("👋 Goodbye!")
 
 
 if __name__ == "__main__":

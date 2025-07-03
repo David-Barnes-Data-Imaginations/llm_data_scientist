@@ -3,7 +3,7 @@ from src.client.telemetry import TelemetryManager
 from langfuse import observe, get_client
 
 class CalculateSparsity(Tool):
-    name = "calculate_sparsity"
+    name = "CalculateSparsity"
     description = "Calculate the sparsity of the given data (proportion of elements that are zero)."
     inputs = {
         "data": {"type": "object", "description": "Input array (can be any shape)"}
@@ -95,7 +95,7 @@ class CalculateSparsity(Tool):
         finally:
             langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             telemetry.finish_trace(trace)
-            pass
+
 
 class HandleMissingValues(Tool):
     name = "HandleMissingValues"

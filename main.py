@@ -30,49 +30,26 @@ def main():
 
     # Create E2B sandbox directly (following newer E2B examples)
     sandbox = Sandbox()
-    
+
+    # Upload requirements.txt and install dependencies here to give time for upload before calling install
+    with open("requirements.txt", "rb") as f:
+        sandbox.files.write("requirements.txt", f)
     # Upload dataset to sandbox
     with open("./src/data/tg_database.db", "rb") as f:
         dataset_path_in_sandbox = sandbox.files.write("/data/tg_database.db", f)
+
     with open("./src/data/metadata/turtle_games_dataset_metadata.md", "r") as f:
         metadata_path_in_sandbox = sandbox.files.write("/data/metadata/turtle_games_dataset_metadata.md", f)
     with open("./src/states/agent_step_log.jsonl", "rb") as f:
         sandbox.files.write("/states/agent_step_log.jsonl", f)
 
+    with open("./src/data/turtle_reviews.csv", "rb") as f:
+        turtle_reviews_path_in_sandbox = sandbox.files.write("/src/data/turtle_reviews.csv", f)
+    with open("./src/data/turtle_sales.csv", "rb") as f:
+        turtle_sales_path_in_sandbox = sandbox.files.write("/src/data/turtle_sales.csv", f)
 
-    # Install required packages in E2B sandbox
-    sandbox.commands.run("pip install langfuse smolagents faiss-cpu openai numpy sqlalchemy pandas imbalanced-learn scikit-learn opentelemetry-api opentelemetry-sdk e2b-code-interpreter")
-    sandbox.commands.run("import pandas as pd"
-                         "from smolagents import Tool"
-                         "from src.client.telemetry import TelemetryManager"
-                         "from langfuse import observe, get_client" 
-                         "from pydantic import ValidationError"
-                         "from typing import List, Dict, Any"
-                         "from sqlalchemy import create_engine, text"
-                         "from openai import OpenAI"
-                         "from langfuse import Langfuse"
-                         "import os"
-                         "import json"
-                         "import faiss")
 
-    # ✅ Write Langfuse config to a Python file in the sandbox
-    langfuse_setup_code = f"""
-    from langfuse import Langfuse
-    from opentelemetry.sdk.trace import TracerProvider
-    from openinference.instrumentation.smolagents import SmolagentsInstrumentor
-    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-    
-    langfuse = Langfuse(
-        secret_key=\"{LANGFUSE_SECRET_KEY}\",
-        public_key=\"{LANGFUSE_PUBLIC_KEY}\",
-        host=\"https://cloud.langfuse.com\"
-    )
-    langfuse.__init__(LANFUSE_SECRET_KEY, LANFUSE_PUBLIC_KEY, host="https://cloud.langfuse.com")
-    """
-
-    # Write this config to a file inside the sandbox
-    sandbox.files.write("/config/langfuse_setup.py", langfuse_setup_code.encode())
+    sandbox.commands.run("pip install -r /requirements.txt", timeout=0)
 
     # Pass all required API keys into the sandbox properly
     # (important: `export` here is shell-scoped and not enough on its own)
@@ -82,15 +59,12 @@ def main():
     sandbox.commands.run(f"echo 'HF_TOKEN={HF_TOKEN}' >> ~/.bashrc")
     sandbox.commands.run(f"export HF_TOKEN={HF_TOKEN}")
 
-    sandbox.commands.run(f"echo 'LANGFUSE_SECRET_KEY={LANGFUSE_SECRET_KEY}' >> ~/.bashrc")
-    sandbox.commands.run(f"export LANGFUSE_SECRET_KEY={LANGFUSE_SECRET_KEY}")
-    
-    # Also set OTEL environment variables in sandbox
-    sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com' >> ~/.bashrc")
-    sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic {LANGFUSE_AUTH}' >> ~/.bashrc")
-    sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com")
-    sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic {LANGFUSE_AUTH}")
-    
+    # These will be re-implemented at a later date
+  #  sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com' >> ~/.bashrc")
+  #  sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic {LANGFUSE_AUTH}' >> ~/.bashrc")
+  #  sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com")
+  #  sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic {LANGFUSE_AUTH}")
+
     # Verify environment variables are set
     sandbox.commands.run("echo OPENAI_API_KEY is set as: $OPENAI_API_KEY")
     sandbox.commands.run("echo LANGFUSE_PUBLIC_KEY is set as: $LANGFUSE_PUBLIC_KEY")
@@ -99,7 +73,7 @@ def main():
     # Initialize metadata embedder and embed metadata file
     print("📚 Setting up metadata embeddings...")
     metadata_embedder = MetadataEmbedder(sandbox)
-    result = metadata_embedder.embed_metadata_file("./src/data/metadata/turtle_games_dataset_metadata.md")
+    result = metadata_embedder.embed_metadata_file("/data/metadata/turtle_games_dataset_metadata.md")
     print(f"Metadata embedding result: {result}")
 
     # Create agent, tool factory and tools
@@ -111,6 +85,15 @@ def main():
     print("📖 Embedding tool help notes...")
     help_result = metadata_embedder.embed_tool_help_notes(tools)
     print(f"Tool help embedding result: {help_result}")
+
+    # Start Ollama server and pull model
+    ollama_process = start_ollama_server_background()
+    if not wait_for_ollama_server():
+        print("❌ Failed to start Ollama server. Exiting.")
+        if ollama_process:
+            ollama_process.terminate()
+        return
+    pull_model("DeepSeek-R1")
 
     # Create agent with context manager support for cleanup
     agent = CustomAgent(
@@ -136,6 +119,8 @@ def main():
         # Cleanup agent resources
         print("🧹 Cleaning up agent resources...")
         agent.cleanup()
+        if ollama_process:
+            ollama_process.terminate()
         print("👋 Goodbye!")
 
 

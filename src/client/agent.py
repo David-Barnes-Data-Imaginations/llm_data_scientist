@@ -5,9 +5,9 @@ from smolagents import CodeAgent, PromptTemplates
 from smolagents.models import LiteLLMModel
 from typing import List
 from smolagents import Tool
-from src.utils.prompts import CA_SYSTEM_PROMPT, TASK_PROMPT, PLANNING_INITIAL_FACTS, PLANNING_INITIAL_PLAN, \
+from src.utils.prompts import CA_SYSTEM_PROMPT, PLANNING_INITIAL_FACTS, PLANNING_INITIAL_PLAN, \
     PLANNING_UPDATE_FACTS_PRE, PLANNING_UPDATE_FACTS_POST, PLANNING_UPDATE_PLAN_PRE, PLANNING_UPDATE_PLAN_POST, \
-    CA_MAIN_PROMPT, TCA_MAIN_PROMPT
+    CA_MAIN_PROMPT
 import litellm
 from smolagents.agent_types import AgentText
 
@@ -65,7 +65,7 @@ class CustomAgent:
         try:
             test_response = litellm.completion(
                 model="ollama/DeepSeek-R1",
-                messages=[{"role": "user", "content": "Hello, i'm just joining now, i'll be 1 minute" }],
+                messages=[{"role": "user", "content": "Hello, how are you?" }],
                 api_base="http://localhost:11434",
                 stream=False
             )
@@ -96,7 +96,7 @@ class CustomAgent:
                 executor=executor,
                 additional_authorized_imports=["pandas sqlalchemy sklearn statistics math "],
                 use_structured_outputs_internally=True,
-                add_base_tools=True,
+                add_base_tools=False,
                 max_steps=30,
                 verbosity_level=2,
             )
@@ -105,9 +105,9 @@ class CustomAgent:
                 tools=self.tools,
                 model=model,
                 executor_type="e2b",
-                additional_authorized_imports=["pandas sqlalchemy "],
+                additional_authorized_imports=["pandas sqlalchemy smolagents"],
                 use_structured_outputs_internally=True,
-                add_base_tools=True,
+                add_base_tools=False,
                 max_steps=30,
                 verbosity_level=2,
             )
@@ -179,11 +179,11 @@ async def agent_runner(self, task: str):
             }
 
         # Manual mode pause or 0.5s fallback
-        await self.controller.wait()
+        await self.controller.wait(1 if self.controller.manual_mode else 0.5)
 
         # Slight breathing room after first step
         if i == 0:
-            await asyncio.sleep(1.2)
+            await asyncio.sleep(3.2)
 
 def toggle_manual_mode(self, manual: bool):
     self.controller.toggle_mode(manual)
@@ -206,16 +206,13 @@ class ToolFactory:
         from tools.database_tools import DatabaseConnect, QuerySales, QueryReviews
         from tools.documentation_tools import (DocumentLearningInsights,
                                                RetrieveMetadata, RetrieveSimilarChunks,
-                                               ValidateCleaningResults, SaveCleanedDataframe)
+                                               ValidateCleaningResults)
         from tools.data_structure_feature_engineering_tools import CalculateSparsity, HandleMissingValues
         from tools.dataframe_manipulation_tools import DataframeMelt, DataframeConcat, DataframeDrop, DataframeFill, DataframeMerge, DataframeToNumeric
-        from tools.dataframe_storage import CreateDataframe, CopyDataframe
+        from tools.dataframe_storage import CreateDataframe, SaveCleanedDataframe
         from tools.help_tools import GetToolHelp
         from tools.code_tools import RunCodeRaiseErrors, RunSQL
-        from smolagents import (
-            WebSearchTool,
-            VisitWebpageTool,
-        )
+        
 
         # Create instances of your custom tools
         tools = [
@@ -240,11 +237,9 @@ class ToolFactory:
             DataframeMerge(sandbox=self.sandbox),
             DataframeToNumeric(sandbox=self.sandbox),
             CreateDataframe(sandbox=self.sandbox),
-            CopyDataframe(sandbox=self.sandbox),
             GetToolHelp(sandbox=self.sandbox, metadata_embedder=self.metadata_embedder),
             RunCodeRaiseErrors(sandbox=self.sandbox),
             RunSQL(sandbox=self.sandbox),
-            WebSearchTool(),
-            VisitWebpageTool(),
+            
         ]
         return tools

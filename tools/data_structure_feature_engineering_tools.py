@@ -1,6 +1,4 @@
 from smolagents import Tool
-from src.client.telemetry import TelemetryManager
-from langfuse import observe, get_client
 
 class CalculateSparsity(Tool):
     name = "CalculateSparsity"
@@ -29,8 +27,7 @@ class CalculateSparsity(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-    @observe
-    def forward(self, data: object) -> object:
+    def forward(self, data):
         """
         Calculate and return the sparsity of the given 'data'.
 
@@ -42,59 +39,19 @@ class CalculateSparsity(Tool):
         Returns:
             float: Sparsity as a proportion of zero elements (0 to 1).
         """
-        telemetry = TelemetryManager()
-        langfuse = get_client()
+        import numpy as np
 
-        trace = telemetry.start_trace("calculate_sparsity", {
-            "data_type": str(type(data).__name__)
-        })
+        if isinstance(data, np.ndarray):
+            total_elements = data.size
 
-        try:
-            import numpy as np
-
-            if isinstance(data, np.ndarray):
-                total_elements = data.size
-
-                telemetry.log_event(trace, "processing", {
-                    "step": "calculating_sparsity",
-                    "total_elements": total_elements
-                })
-
-                if total_elements == 0:  # Prevent division by zero
-                    telemetry.log_event(trace, "warning", {
-                        "message": "Empty array detected, returning 0.0"
-                    })
-                    return 0.0
-
-                num_zeros = np.count_nonzero(data == 0)
-                sparsity = num_zeros / total_elements
-
-                # Log success
-                telemetry.log_event(trace, "success", {
-                    "sparsity": sparsity,
-                    "num_zeros": num_zeros,
-                    "total_elements": total_elements
-                })
-
-                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-                return sparsity
-            else:
-                telemetry.log_event(trace, "warning", {
-                    "message": "Input is not a numpy array, returning 0.0"
-                })
-                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
+            if total_elements == 0:  # Prevent division by zero
                 return 0.0
 
-        except Exception as e:
-            # Log error
-            telemetry.log_event(trace, "error", {
-                "error_type": str(type(e).__name__),
-                "error_message": str(e)
-            })
-            raise
-        finally:
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            telemetry.finish_trace(trace)
+            num_zeros = np.count_nonzero(data == 0)
+            sparsity = num_zeros / total_elements
+            return sparsity
+        else:
+            return 0.0
 
 
 class HandleMissingValues(Tool):
@@ -129,7 +86,6 @@ class HandleMissingValues(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-    @observe
     def forward(self, df, method='linear', axis=0, fill_strategy=None, inplace=False):
         """
         Args:
@@ -158,34 +114,13 @@ class HandleMissingValues(Tool):
         Replacing with a Scalar:
         df_copy = handle_missing_values(df_copy, fill_strategy=0)  # Replace NaNs with 0
         """
-        telemetry = TelemetryManager()
-        langfuse = get_client()
-        trace = telemetry.start_trace("handle_missing_values", {
-            "method": method,
-            "axis": axis,
-            "fill_strategy": str(fill_strategy),
-            "inplace": inplace
-        })
-
         try:
             import pandas as pd
-
-            # Log initial state
-            telemetry.log_event(trace, "processing", {
-                "step": "initial_state",
-                "df_shape": str(df.shape) if hasattr(df, 'shape') else "unknown",
-                "missing_values_count": str(df.isna().sum().sum()) if hasattr(df, 'isna') else "unknown"
-            })
 
             if not inplace:
                 df = df.copy()  # Avoid modifying the original DataFrame
 
             if fill_strategy is not None:
-                telemetry.log_event(trace, "processing", {
-                    "step": "imputation",
-                    "strategy": str(fill_strategy)
-                })
-
                 # Handle imputation based on the provided strategy
                 if fill_strategy == 'mean':
                     df.fillna(df.mean(), inplace=True)
@@ -198,31 +133,10 @@ class HandleMissingValues(Tool):
                     # Assume fill_strategy is a scalar value
                     df.fillna(fill_strategy, inplace=True)
             else:
-                telemetry.log_event(trace, "processing", {
-                    "step": "interpolation",
-                    "method": method,
-                    "axis": axis
-                })
-
                 # Use interpolation to handle missing values
                 df.interpolate(method=method, axis=axis, inplace=True)
 
-            # Log final state
-            telemetry.log_event(trace, "success", {
-                "remaining_missing_values": str(df.isna().sum().sum()) if hasattr(df, 'isna') else "unknown"
-            })
-
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return df
 
         except Exception as e:
-            # Log error
-            telemetry.log_event(trace, "error", {
-                "error_type": str(type(e).__name__),
-                "error_message": str(e)
-            })
             raise ValueError(f"Error handling missing values: {e}")
-        finally:
-            # Always finish the trace
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            telemetry.finish_trace(trace)

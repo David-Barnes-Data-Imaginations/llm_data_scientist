@@ -23,6 +23,12 @@ Query past insights with retrieval tools before analyzing new chunks.
 
 You must process the data in chunks of 200 rows. The QuerySales and QueryReviews tools are available for this purpose.
 Once you have finished cleaning each chunk, use the `save_cleaned_dataframe()` tool to save the cleaned data.
+QuerySales and QueryReviews open the database for you. If that doesn't work, use DatabaseConnect.
+Otherwise here are the file locations:
+Database: {dataset_path_in_sandbox}
+Reviews CSV: {turtle_sales_path_in_sandbox}
+Sales CSV: {turtle_reviews_path_in_sandbox}
+
 at the end, only when you have your answer, return your final answer.
 <code>
 final_answer("YOUR_ANSWER_HERE")

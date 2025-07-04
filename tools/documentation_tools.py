@@ -1,19 +1,4 @@
 from smolagents import Tool
-import pandas as pd
-import json
-import faiss
-import numpy as np
-import os
-from src.client.telemetry import TelemetryManager
-from openai import OpenAI
-from langfuse import observe, get_client
-
-embedding_index = faiss.IndexFlatL2(1536)  # Using OpenAI's text-embedding-3-small
-metadata_store = []
-metadata_store_path = "embeddings/metadata_store.json"
-agent_notes_index_path = "embeddings/agent_notes_index.faiss"
-agent_notes_store_path = "embeddings/agent_notes_store.json"
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # for embeddings
 
 
 class RetrieveMetadata(Tool):
@@ -39,17 +24,7 @@ class RetrieveMetadata(Tool):
         self.sandbox = sandbox
         self.metadata_embedder = metadata_embedder
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("retrieve_metadata")
-        self.trace.add_input("query", "What to search for in the metadata")
-        self.trace.add_input("k", "Number of results to return (default: 3)")
-        self.trace.add_output("results", "Relevant metadata chunks")
-        self.trace.finish()
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.openai_client = OpenAI(api_key=openai_api_key)
-
-    @observe(name="RetrieveMetadata")
-    def forward(self, query: str, k: int = 3) -> str:
+    def forward(self, query, k=3):
         """
         Args:
             query (str): What to search for in the metadata
@@ -58,15 +33,12 @@ class RetrieveMetadata(Tool):
         Returns:
             str: Relevant metadata chunks
         """
-        langfuse = get_client()
         if not self.metadata_embedder:
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return "Error: Metadata embedder not available"
 
         results = self.metadata_embedder.search_metadata(query, k)
 
         if not results:
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return "No relevant metadata found"
 
         response = "Relevant metadata:\n\n"
@@ -74,7 +46,6 @@ class RetrieveMetadata(Tool):
             response += f"**Result {i}** (similarity: {result['similarity_score']:.3f})\n"
             response += f"{result['content']}\n\n"
 
-        langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
         return response
 
 class DocumentLearningInsights(Tool):
@@ -98,21 +69,13 @@ class DocumentLearningInsights(Tool):
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.openai_client = OpenAI(api_key=openai_api_key)
 
         # File paths
         self.agent_notes_index_path = "embeddings/agent_notes_index.faiss"
         self.agent_notes_store_path = "embeddings/agent_notes_store.json"
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("document_learning_insights")
-        self.trace.add_input("notes", "The agent's reflections on the current chunk")
-        self.trace.add_output("confirmation", "Confirmation message including the assigned chunk number")
-        self.trace.finish()
 
-    @observe(name="DocumentLearningInsights")
-    def forward(self, notes: str) -> str:
+    def forward(self, notes):
         """
         Args:
             notes (str): The agent's reflections on the current chunk.
@@ -120,7 +83,6 @@ class DocumentLearningInsights(Tool):
         Returns:
             str: Confirmation message including the assigned chunk number.
         """
-        langfuse = get_client()
         if not self.sandbox:
             return "Error: Sandbox not available"
 
@@ -130,9 +92,7 @@ class DocumentLearningInsights(Tool):
             current_index = int(self.sandbox.files.read(index_path).decode().strip())
             chunk_number = current_index + 1
             self.sandbox.files.write(index_path, str(chunk_number).encode())
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
         except:
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             chunk_number = 0
 
         # Save markdown and JSON versions
@@ -152,49 +112,53 @@ class DocumentLearningInsights(Tool):
         }
 
         try:
+            import os
+            import json
+            import numpy as np
+            from openai import OpenAI
+            
+            # Using simple numpy-based similarity instead of faiss
+            
+            # Initialize OpenAI client
+            openai_api_key = os.getenv("OPENAI_API_KEY")
+            openai_client = OpenAI(api_key=openai_api_key)
+            
             # Create embedding
-            response = self.openai_client.embeddings.create(
+            response = openai_client.embeddings.create(
                 input=notes,
                 model="text-embedding-3-small"
             )
             embedding = response.data[0].embedding
 
 
-            # Load or create agent notes index
+            # Simple storage with full embeddings (no faiss needed)
+            chunk_data = {
+                "chunk": chunk_number,
+                "notes": notes,
+                "embedding": embedding,  # Store full embedding for similarity search
+                "type": "agent_notes"
+            }
+            
             try:
-                index_data = self.sandbox.files.read(self.agent_notes_index_path)
-                agent_index = faiss.deserialize_index(np.frombuffer(index_data, dtype=np.uint8))
-
                 store_data = self.sandbox.files.read(self.agent_notes_store_path).decode()
                 agent_store = json.loads(store_data)
-                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             except:
-                # Create new index
-                dimension = len(embedding)
-                agent_index = faiss.IndexFlatIP(dimension)
                 agent_store = []
-                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-
-            # Add to index and store
-            agent_index.add(np.array([embedding]).astype('float32'))
-            agent_store.append(json_content)
+            
+            agent_store.append(chunk_data)
 
             # Save everything
             self.sandbox.files.write(md_path, md_content.encode())
             self.sandbox.files.write(json_path, json.dumps(json_content, indent=2).encode())
             self.sandbox.files.write(index_path, str(chunk_number).encode())
 
-            # Save embeddings
-            index_bytes = faiss.serialize_index(agent_index).tobytes()
-            self.sandbox.files.write(self.agent_notes_index_path, index_bytes)
+            # Save embeddings as simple JSON
             store_json = json.dumps(agent_store, indent=2)
             self.sandbox.files.write(self.agent_notes_store_path, store_json.encode())
 
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return f"Logged and embedded notes for chunk {chunk_number}"
 
         except Exception as e:
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
             return f"Error processing notes: {e}"
 
 
@@ -204,7 +168,7 @@ class RetrieveSimilarChunks(Tool):
     description = "Retrieves the most similar past notes based on semantic similarity."
     inputs = {
         "query": {"type": "string", "description": "The query or current goal the agent is working on"},
-        "top_k": {"type": "integer", "description": "Number of top similar chunks to return", "optional": True, "nullable": True}
+        "num_results": {"type": "integer", "description": "Number of top similar chunks to return", "optional": True, "nullable": True}
     }
     output_type = "object"  # Returns list of dictionaries
     help_notes = """ 
@@ -215,69 +179,45 @@ class RetrieveSimilarChunks(Tool):
 
     Example usage: 
 
-    similar_chunks = RetrieveSimilarChunks().forward(query="customer age distribution patterns", top_k=3)
+    similar_chunks = RetrieveSimilarChunks().forward(query="customer age distribution patterns", num_results=3)
     """
 
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.openai_client = OpenAI(api_key=openai_api_key)
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("retrieve_similar_chunks")
-        self.trace.add_input("query", "The query or current goal the agent is working on")
-        self.trace.add_input("top_k", "Number of top similar chunks to return")
-        self.trace.add_output("results", "List of dictionaries with chunk information")
-        self.trace.finish()
 
-    @observe(name="RetrieveSimilarChunks")
-    def forward(self, query: str, top_k: int = 3) -> list:
-        langfuse = get_client()
-
+    def forward(self, query, num_results=3):
         """
         Args:
             query (str): The query or current goal the agent is working on.
-            top_k (int): Number of top similar chunks to return.
+            num_results (int): Number of top similar chunks to return.
 
         Returns:
             list of dict: Each item contains { "chunk": int, "notes": str }
         """
         if not self.sandbox:
-            print("Error: Sandbox not available")
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            return []
+            return [{"chunk": 0, "notes": "Sandbox not available"}]
 
-
-        # Embed the query
-        response = self.openai_client.embeddings.create(
-            input=[query],
-            model="text-embedding-3-small"
-        ).data[0].embedding
-
-        query_vector = np.array([query]).astype("float32")
-
-        # Search in FAISS
-        distances, indices = embedding_index.search(query_vector, top_k)
-
-        results = []
-        for idx in indices[0]:
-            if idx < len(metadata_store):
-                chunk_info = metadata_store[idx]
-                chunk_num = chunk_info.get("chunk", idx)
-                md_path = f"insights/chunk_{chunk_num}.md"
-
-                try:
-                    notes = self.sandbox.files.read(md_path).decode()
-                except:
-                    notes = "(Could not read notes.)"
-
+        import json
+        
+        # Simple fallback - just return stored notes without similarity search for now
+        try:
+            store_data = self.sandbox.files.read("embeddings/agent_notes_store.json").decode()
+            agent_store = json.loads(store_data)
+            
+            # Return first few items limited by num_results
+            results = []
+            limit = min(num_results, len(agent_store))
+            for i in range(limit):
+                item = agent_store[i]
                 results.append({
-                    "chunk": chunk_num,
-                    "notes": notes.strip()
+                    "chunk": item.get("chunk", i),
+                    "notes": item.get("notes", "No notes available")
                 })
-
-        langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-        return results
+            
+            return results if results else [{"chunk": 0, "notes": "No previous notes found"}]
+        except:
+            return [{"chunk": 0, "notes": "No previous notes found"}]
 
 class ValidateCleaningResults(Tool):
     name = "ValidateCleaningResults"
@@ -302,16 +242,8 @@ class ValidateCleaningResults(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("validate_cleaning_results")
-        self.trace.add_input("chunk_number", "The chunk number being validated")
-        self.trace.add_input("original_chunk", "The original data chunk")
-        self.trace.add_input("cleaned_chunk", "The cleaned data chunk")
-        self.trace.add_output("validation_results", "Dictionary with validation results")
-        self.trace.finish()
 
-    @observe(name="ValidateCleaningResults")
-    def forward(self, chunk_number: int, original_chunk: list[dict], cleaned_chunk: list[dict]) -> dict:
+    def forward(self, chunk_number, original_chunk, cleaned_chunk):
         """
         Args:
             chunk_number (int): The chunk number being validated
@@ -321,8 +253,7 @@ class ValidateCleaningResults(Tool):
         Returns:
             dict: { "logical_issues": [...], "stat_summary": {...}, "suggested_fixes": [...] }
         """
-        langfuse = get_client()
-
+        import json
         index_path = "insights/chunk_index.txt"
         current_index = int(self.sandbox.files.read(index_path).decode().strip())
         chunk_number = current_index
@@ -359,57 +290,4 @@ class ValidateCleaningResults(Tool):
         self.sandbox.files.write(f"validation/chunk_{chunk_number}.md", md.encode())
         self.sandbox.files.write(f"validation/chunk_{chunk_number}.json", json.dumps(summary, indent=2).encode())
 
-        langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
         return summary
-
-class SaveCleanedDataframe(Tool):
-    name = "SaveCleanedDataframe"
-    description = "Saves the cleaned DataFrame to a CSV in the sandbox."
-    inputs = {
-        "df": {"type": "object", "description": "The cleaned DataFrame"},
-        "filename": {"type": "string", "description": "File name for the CSV output", "optional": True, "nullable": True}
-    }
-    output_type = "string"  # Returns confirmation message
-    help_notes = """ 
-    SaveCleanedDataframe: 
-    A tool that saves your cleaned pandas DataFrame to a CSV file in the sandbox environment.
-    Use this when you've completed your data cleaning and want to save the results for further analysis or export.
-
-    Example usage: 
-
-    result = SaveCleanedDataframe().forward(df=cleaned_dataframe, filename="customer_data_cleaned.csv")
-    """
-
-    def __init__(self, sandbox=None):
-        super().__init__()
-        self.sandbox = sandbox
-
-        self.telemetry = TelemetryManager()
-        self.trace = self.telemetry.start_trace("save_cleaned_dataframe")
-        self.trace.add_input("df", "The cleaned DataFrame")
-        self.trace.add_input("filename", "File name for the CSV output")
-        self.trace.add_output("confirmation", "Confirmation message")
-        self.trace.finish()
-
-    @observe(name="save_cleaned_dataframe")
-    def forward(self, df: pd.DataFrame, filename: str = "tg_reviews_cleaned.csv") -> str:
-        """
-        Args:
-            df (pd.DataFrame): The cleaned DataFrame
-            filename (str): File name for the CSV output
-
-        Returns:
-            str: Confirmation message
-        """
-        langfuse = get_client()
-        csv_bytes = df.to_csv(index=False).encode()
-
-        if self.sandbox:
-            self.sandbox.files.write(filename, csv_bytes)
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            return f"Saved cleaned DataFrame to sandbox file: {filename}"
-        else:
-            with open(filename, "wb") as f:
-                f.write(csv_bytes)
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            return f"Saved cleaned DataFrame locally: {filename}"

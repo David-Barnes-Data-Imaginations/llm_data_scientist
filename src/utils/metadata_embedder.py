@@ -2,7 +2,6 @@ import os
 import json
 import numpy as np
 from openai import OpenAI
-import faiss as faiss
 # Fix OPENAI_API_KEY passing from OS to Sandbox
 import os
 from dotenv import load_dotenv
@@ -14,16 +13,12 @@ class MetadataEmbedder:
         openai_api_key = os.getenv("OPENAI_API_KEY")
         self.openai_client = OpenAI(api_key=openai_api_key)
 
-        # Separate storage for metadata vs agent notes
-        self.metadata_index_path = "embeddings/metadata_index.faiss"
+        # Separate storage for metadata vs agent notes (using numpy instead of faiss)
         self.metadata_store_path = "embeddings/metadata_store.json"
-        self.agent_notes_index_path = "embeddings/agent_notes_index.faiss"
         self.agent_notes_store_path = "embeddings/agent_notes_store.json"
 
-        # Initialize indexes
-        self.metadata_index = None
+        # Initialize stores (numpy-based)
         self.metadata_store = []
-        self.agent_notes_index = None
         self.agent_notes_store = []
 
     def _check_metadata_exists(self) -> bool:
@@ -32,8 +27,7 @@ class MetadataEmbedder:
             return False
 
         try:
-            # Check if both metadata files exist
-            self.sandbox.files.read(self.metadata_index_path)
+            # Check if metadata store exists
             self.sandbox.files.read(self.metadata_store_path)
             return True
         except:
@@ -42,11 +36,7 @@ class MetadataEmbedder:
     def _load_existing_metadata(self):
         """Load existing metadata embeddings"""
         try:
-            # Load metadata index
-            index_data = self.sandbox.files.read(self.metadata_index_path)
-            self.metadata_index = faiss.deserialize_index(np.frombuffer(index_data, dtype=np.uint8))
-
-            # Load metadata store
+            # Load metadata store (now includes embeddings)
             store_data = self.sandbox.files.read(self.metadata_store_path).decode()
             self.metadata_store = json.loads(store_data)
 
@@ -90,12 +80,13 @@ class MetadataEmbedder:
                 embedding = response.data[0].embedding
                 embeddings.append(embedding)
 
-                # Store metadata about this chunk
+                # Store metadata about this chunk including embedding
                 self.metadata_store.append({
                     "type": "metadata",
                     "source": "turtle_games_dataset_metadata.md",
                     "chunk_id": i,
                     "content": chunk,
+                    "embedding": embedding,
                     "created_at": "startup"
                 })
             except Exception as e:
@@ -105,18 +96,9 @@ class MetadataEmbedder:
         if not embeddings:
             return "Error: No embeddings created"
 
-        # Create FAISS index
-        dimension = len(embeddings[0])
-        self.metadata_index = faiss.IndexFlatIP(dimension)  # Inner product for similarity
-        self.metadata_index.add(np.array(embeddings).astype('float32'))
-
-        # Save to sandbox
+        # Save to sandbox (embeddings are now stored in metadata_store)
         try:
-            # Save index
-            index_bytes = faiss.serialize_index(self.metadata_index).tobytes()
-            self.sandbox.files.write(self.metadata_index_path, index_bytes)
-
-            # Save metadata store
+            # Save metadata store with embeddings
             store_json = json.dumps(self.metadata_store, indent=2)
             self.sandbox.files.write(self.metadata_store_path, store_json.encode())
 
@@ -148,8 +130,8 @@ class MetadataEmbedder:
         return chunks
 
     def search_metadata(self, query: str, k: int = 3) -> list:
-        """Search metadata embeddings"""
-        if not self.metadata_index or not self.metadata_store:
+        """Search metadata embeddings using numpy cosine similarity"""
+        if not self.metadata_store:
             return []
 
         try:
@@ -158,17 +140,32 @@ class MetadataEmbedder:
                 input=query,
                 model="text-embedding-3-small"
             )
-            query_embedding = np.array([response.data[0].embedding]).astype('float32')
+            query_embedding = np.array(response.data[0].embedding)
 
-            # Search
-            scores, indices = self.metadata_index.search(query_embedding, k)
+            # Calculate similarities with all stored embeddings
+            similarities = []
+            for i, item in enumerate(self.metadata_store):
+                if "embedding" in item:
+                    stored_embedding = np.array(item["embedding"])
+                    
+                    # Normalize embeddings
+                    norm_query = query_embedding / np.linalg.norm(query_embedding)
+                    norm_stored = stored_embedding / np.linalg.norm(stored_embedding)
+                    
+                    # Calculate cosine similarity
+                    similarity = np.dot(norm_query, norm_stored)
+                    similarities.append((similarity, i))
 
+            # Sort by similarity and take top k
+            similarities.sort(key=lambda x: x[0], reverse=True)
+            top_similarities = similarities[:k]
+
+            # Build results
             results = []
-            for i, idx in enumerate(indices[0]):
-                if idx < len(self.metadata_store):
-                    result = self.metadata_store[idx].copy()
-                    result['similarity_score'] = float(scores[0][i])
-                    results.append(result)
+            for similarity, idx in top_similarities:
+                result = self.metadata_store[idx].copy()
+                result['similarity_score'] = float(similarity)
+                results.append(result)
 
             return results
 
@@ -203,11 +200,12 @@ class MetadataEmbedder:
                     embedding = response.data[0].embedding
                     embeddings.append(embedding)
 
-                    # Store metadata about this tool help
+                    # Store metadata about this tool help including embedding
                     self.metadata_store.append({
                         "type": "tool_help",
                         "tool_name": tool.name,
                         "content": tool.help_notes,
+                        "embedding": embedding,
                         "created_at": "startup"
                     })
                     help_notes_count += 1
@@ -216,15 +214,9 @@ class MetadataEmbedder:
                     print(f"Error embedding help notes for tool {tool.name}: {e}")
                     continue
 
-        if embeddings and self.metadata_index is not None:
-            # Add embeddings to existing index
-            self.metadata_index.add(np.array(embeddings).astype('float32'))
-
-            # Save updated index and store
+        if embeddings:
+            # Save updated store with embeddings
             try:
-                index_bytes = faiss.serialize_index(self.metadata_index).tobytes()
-                self.sandbox.files.write(self.metadata_index_path, index_bytes)
-
                 store_json = json.dumps(self.metadata_store, indent=2)
                 self.sandbox.files.write(self.metadata_store_path, store_json.encode())
 

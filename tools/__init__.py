@@ -14,7 +14,7 @@ from .data_structure_feature_engineering_tools import HandleMissingValues, Calcu
 # Import from database_tools.py
 from .database_tools import DatabaseConnect, QuerySales, QueryReviews
 from .dataframe_manipulation_tools import DataframeMelt, DataframeConcat, DataframeDrop, DataframeFill, DataframeMerge, DataframeToNumeric
-from .dataframe_storage import CreateDataframe, CopyDataframe
+from .dataframe_storage import CreateDataframe, SaveCleanedDataframe
 from .help_tools import GetToolHelp
 from .code_tools import RunCodeRaiseErrors, RunSQL
 # Import from documentation_tools.py
@@ -22,7 +22,7 @@ from .documentation_tools import (
     DocumentLearningInsights,
     RetrieveSimilarChunks,
     ValidateCleaningResults,
-    SaveCleanedDataframe, RetrieveMetadata
+    RetrieveMetadata
 )
 
 __all__ = [
@@ -52,9 +52,7 @@ __all__ = [
     'DocumentLearningInsights',
     'RetrieveSimilarChunks',
     'ValidateCleaningResults',
-    'SaveCleanedDataframe',
     'RetrieveMetadata',
-    'GetToolHelp',
 
     # Dataframe Manipulation Tools
     'DataframeMelt',
@@ -66,5 +64,5 @@ __all__ = [
 
     # Dataframe Storage Tools
     'CreateDataframe',
-    'CopyDataframe',
+    'SaveCleanedDataframe',
 ]

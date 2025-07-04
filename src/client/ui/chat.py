@@ -363,7 +363,7 @@ class GradioUI:
     def log_user_message(self, text_input, file_uploads_log=None):
         import gradio as gr
 
-        return text_input, gr.Button(interactive=False)
+        return text_input, gr.Textbox(value="", interactive=True), gr.Button(interactive=True)
 
     def launch(self, share: bool = False, **kwargs):
         """

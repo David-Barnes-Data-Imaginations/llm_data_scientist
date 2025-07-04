@@ -1,9 +1,5 @@
 from smolagents import Tool
-import pandas as pd
-from src.states.shared_state import dataframe_store
-from src.client.telemetry import TelemetryManager
-from langfuse import observe, get_client
-telemetry = TelemetryManager()
+
 
 
 class CreateDataframe(Tool):
@@ -19,104 +15,13 @@ class CreateDataframe(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-    @observe(name="CreateDataframe")
-    def forward(self, data: list, name: str = "df") -> str:
-        from src.states.shared_state import dataframe_store
-        telemetry = TelemetryManager()
-        langfuse = get_client()
-        trace = telemetry.start_trace("create_dataframe", {
-            "data_length": len(data) if hasattr(data, '__len__') else "unknown",
-            "name": name
-        })
+    def forward(self, data, name="df"):
+        import pandas as pd
 
-        try:
-            telemetry.log_event(trace, "processing", {
-                "step": "creating_dataframe",
-                "data_sample": str(data[:2]) if hasattr(data, '__getitem__') and len(data) > 0 else "empty"
-            })
+        df = pd.DataFrame(data)
 
-            df = pd.DataFrame(data)
-            dataframe_store[name] = df
+        return f"✅ Created DataFrame '{name}' with shape {df.shape}"
 
-            telemetry.log_event(trace, "success", {
-                "df_shape": str(df.shape) if hasattr(df, 'shape') else "unknown",
-                "df_columns": str(list(df.columns)) if hasattr(df, 'columns') else "unknown"
-            })
-
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            return f"✅ Created DataFrame '{name}' with shape {df.shape}"
-
-        except Exception as e:
-            telemetry.log_event(trace, "error", {
-                "error_type": str(type(e).__name__),
-                "error_message": str(e)
-            })
-            raise
-        finally:
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            telemetry.finish_trace(trace)
-
-
-class CopyDataframe(Tool):
-    name = "CopyDataframe"
-    description = "Copies a DataFrame from one key to another."
-    inputs = {
-        "source_dataframe": {"type": "string", "description": "Name of the source DataFrame"},
-        "copy_name": {"type": "string", "description": "New name for the copied DataFrame"}
-    }
-    output_type = "string"
-
-    def __init__(self, sandbox=None):
-        super().__init__()
-        self.sandbox = sandbox
-
-    @observe(name="CopyDataframe")
-    def forward(self, source_dataframe: str, copy_name: str) -> str:
-        telemetry = TelemetryManager()
-        langfuse = get_client()
-        trace = telemetry.start_trace("copy_dataframe", {
-            "source_dataframe": source_dataframe,
-            "copy_name": copy_name
-        })
-
-        try:
-            telemetry.log_event(trace, "processing", {
-                "step": "checking_source_dataframe",
-                "available_dataframes": str(list(dataframe_store.keys()))
-            })
-
-            if source_dataframe not in dataframe_store:
-                telemetry.log_event(trace, "error", {
-                    "error_type": "ValueError",
-                    "error_message": f"Source DataFrame '{source_dataframe}' not found."
-                })
-                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-                raise ValueError(f"❌ Source DataFrame '{source_dataframe}' not found.")
-
-            telemetry.log_event(trace, "processing", {
-                "step": "copying_dataframe",
-                "source_shape": str(dataframe_store[source_dataframe].shape) if hasattr(dataframe_store[source_dataframe], 'shape') else "unknown"
-            })
-
-            dataframe_store[copy_name] = dataframe_store[source_dataframe].copy()
-
-            telemetry.log_event(trace, "success", {
-                "copy_shape": str(dataframe_store[copy_name].shape) if hasattr(dataframe_store[copy_name], 'shape') else "unknown"
-            })
-
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            return f"📄 DataFrame '{source_dataframe}' copied to '{copy_name}'"
-
-        except Exception as e:
-            telemetry.log_event(trace, "error", {
-                "error_type": str(type(e).__name__),
-                "error_message": str(e)
-            })
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            raise
-        finally:
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            telemetry.finish_trace(trace)
 
 class SaveCleanedDataframe(Tool):
     name = "SaveCleanedDataframe"
@@ -131,8 +36,7 @@ class SaveCleanedDataframe(Tool):
         super().__init__()
         self.sandbox = sandbox
 
-    @observe(name="SaveCleanedDataframe")
-    def forward(self, df: pd.DataFrame, filename: str = "tg_reviews_cleaned.csv") -> str:
+    def forward(self, df, filename="tg_reviews_cleaned.csv"):
         """
         Args:
             df (pd.DataFrame): The cleaned DataFrame
@@ -141,50 +45,20 @@ class SaveCleanedDataframe(Tool):
         Returns:
             str: Confirmation message
         """
-        telemetry = TelemetryManager()
-        langfuse = get_client()
-        trace = telemetry.start_trace("save_cleaned_dataframe", {
-            "df_type": str(type(df).__name__),
-            "filename": filename
-        })
+        import pandas as pd
+        
+        # Convert to DataFrame if needed
+        if not isinstance(df, pd.DataFrame):
+            df = pd.DataFrame(df)
+            
+        csv_bytes = df.to_csv(index=False).encode()
 
-        try:
-            telemetry.log_event(trace, "processing", {
-                "step": "preparing_csv",
-                "df_shape": str(df.shape) if hasattr(df, 'shape') else "unknown",
-                "df_columns": str(list(df.columns)) if hasattr(df, 'columns') else "unknown"
-            })
+        if self.sandbox:
+            self.sandbox.files.write(filename, csv_bytes)
+            result = f"Saved cleaned DataFrame to sandbox file: {filename}"
+        else:
+            with open(filename, "wb") as f:
+                f.write(csv_bytes)
+            result = f"Saved cleaned DataFrame locally: {filename}"
 
-            csv_bytes = df.to_csv(index=False).encode()
-
-            telemetry.log_event(trace, "processing", {
-                "step": "saving_file",
-                "csv_size_bytes": len(csv_bytes),
-                "destination": "sandbox" if self.sandbox else "local"
-            })
-
-            if self.sandbox:
-                self.sandbox.files.write(filename, csv_bytes)
-                langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-                result = f"Saved cleaned DataFrame to sandbox file: {filename}"
-            else:
-                with open(filename, "wb") as f:
-                    f.write(csv_bytes)
-                result = f"Saved cleaned DataFrame locally: {filename}"
-
-            telemetry.log_event(trace, "success", {
-                "message": result
-            })
-
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            return result
-        except Exception as e:
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            telemetry.log_event(trace, "error", {
-                "error_type": str(type(e).__name__),
-                "error_message": str(e)
-            })
-            raise
-        finally:
-            langfuse.update_current_trace(user_id="cmc1u2sny0176ad07fpb9il4b")
-            telemetry.finish_trace(trace)
+        return result

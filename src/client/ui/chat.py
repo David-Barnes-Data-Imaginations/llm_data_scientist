@@ -326,21 +326,40 @@ class GradioUI:
             session_state["agent"] = self.agent
 
         try:
-            messages.append(gr.ChatMessage(role="user", content=CHAT_PROMPT, metadata={"status": "done"}))
+            messages.append(gr.ChatMessage(role="user", content=prompt, metadata={"status": "done"}))
             yield messages
 
-            for msg in stream_to_gradio(
-                    session_state["agent"], task=TCA_SYSTEM_PROMPT, reset_agent_memory=self.reset_agent_memory
-            ):
-                if isinstance(msg, gr.ChatMessage):
-                    messages[-1].metadata["status"] = "done"
-                    messages.append(msg)
-                elif isinstance(msg, str):  # Then it's only a completion delta
-                    msg = msg.replace("<", r"\<").replace(">", r"\>")  # HTML tags seem to break Gradio Chatbot
-                    if messages[-1].metadata["status"] == "pending":
-                        messages[-1].content = msg
-                    else:
-                        messages.append(gr.ChatMessage(role="assistant", content=msg, metadata={"status": "pending"}))
+            # Check if agent is in agentic mode and handle final answer
+            if hasattr(session_state["agent"], 'is_agentic_mode') and session_state["agent"].is_agentic_mode:
+                # Use the smolagents stream for agentic mode
+                for msg in stream_to_gradio(
+                        session_state["agent"], task=prompt, reset_agent_memory=self.reset_agent_memory
+                ):
+                    if isinstance(msg, gr.ChatMessage):
+                        messages[-1].metadata["status"] = "done"
+                        messages.append(msg)
+                        
+                        # Check if this is a final answer step
+                        if hasattr(msg, 'content') and '**Final answer:**' in str(msg.content):
+                            # Signal return to chat mode
+                            session_state["agent"].return_to_chat_mode()
+                            messages.append(gr.ChatMessage(
+                                role="assistant", 
+                                content="✅ Analysis complete! I'm back in chat mode. Feel free to ask me questions about the analysis or request new tasks.",
+                                metadata={"status": "done"}
+                            ))
+                            
+                    elif isinstance(msg, str):  # Then it's only a completion delta
+                        msg = msg.replace("<", r"\<").replace(">", r"\>")  # HTML tags seem to break Gradio Chatbot
+                        if messages[-1].metadata["status"] == "pending":
+                            messages[-1].content = msg
+                        else:
+                            messages.append(gr.ChatMessage(role="assistant", content=msg, metadata={"status": "pending"}))
+                    yield messages
+            else:
+                # Handle chat mode - direct response from agent
+                response = session_state["agent"].run(prompt, stream=False)
+                messages.append(gr.ChatMessage(role="assistant", content=response, metadata={"status": "done"}))
                 yield messages
 
             yield messages

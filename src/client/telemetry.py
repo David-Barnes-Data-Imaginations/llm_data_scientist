@@ -26,15 +26,17 @@ class TelemetryManager:
             self.tracer = trace.get_tracer(__name__)
             self.langfuse = Langfuse()
             
-            # Initialize trace provider only once
-            self.trace_provider = TracerProvider()
-            self.trace_provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter()))
+            # Initialize trace provider only once - DISABLED for now to avoid OTEL errors
+            # self.trace_provider = TracerProvider()
+            # self.trace_provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter()))
             
-            # Only instrument once
-            try:
-                SmolagentsInstrumentor().instrument(tracer_provider=self.trace_provider)
-            except Exception as e:
-                print(f"Instrumentation warning: {e}")
+            # Only instrument once - DISABLED for now to avoid OTEL errors
+            # try:
+            #     SmolagentsInstrumentor().instrument(tracer_provider=self.trace_provider)
+            # except Exception as e:
+            #     print(f"Instrumentation warning: {e}")
+            
+            print("🔇 OpenTelemetry instrumentation disabled to avoid connection errors")
             
             TelemetryManager._initialized = True
 

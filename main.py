@@ -44,9 +44,9 @@ def main():
         sandbox.files.write("/states/agent_step_log.jsonl", f)
 
     with open("./src/data/turtle_reviews.csv", "rb") as f:
-        turtle_reviews_path_in_sandbox = sandbox.files.write("/src/data/turtle_reviews.csv", f)
+        turtle_reviews_path_in_sandbox = sandbox.files.write("/data/turtle_reviews.csv", f)
     with open("./src/data/turtle_sales.csv", "rb") as f:
-        turtle_sales_path_in_sandbox = sandbox.files.write("/src/data/turtle_sales.csv", f)
+        turtle_sales_path_in_sandbox = sandbox.files.write("/data/turtle_sales.csv", f)
 
 
     sandbox.commands.run("pip install -r /requirements.txt", timeout=0)
@@ -59,11 +59,6 @@ def main():
     sandbox.commands.run(f"echo 'HF_TOKEN={HF_TOKEN}' >> ~/.bashrc")
     sandbox.commands.run(f"export HF_TOKEN={HF_TOKEN}")
 
-    # These will be re-implemented at a later date
-  #  sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com' >> ~/.bashrc")
-  #  sandbox.commands.run(f"echo 'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic {LANGFUSE_AUTH}' >> ~/.bashrc")
-  #  sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com")
-  #  sandbox.commands.run(f"export OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic {LANGFUSE_AUTH}")
 
     # Verify environment variables are set
     sandbox.commands.run("echo OPENAI_API_KEY is set as: $OPENAI_API_KEY")

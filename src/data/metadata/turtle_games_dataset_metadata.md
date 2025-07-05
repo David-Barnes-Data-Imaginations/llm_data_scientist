@@ -63,3 +63,107 @@ Global video game sales data with platform and regional breakdowns.
 - Year represents initial release, not all sales years
 
 ---
+
+Analysis
+
+
+### Analysis Opportunities
+- Customer segmentation by demographics and spending patterns
+- Platform lifecycle analysis using generation data
+- Genre popularity trends over time
+- Regional sales pattern analysis
+
+### Data Processing History
+| Field | Description | LLM Tool Benefit |
+|-------|-------------|------------------|
+| `last_validated` | ISO timestamp of last data validation | Tools can check freshness |
+| `validation_rules` | JSON array of validation constraints | Automated quality checks |
+| `missing_value_strategy` | How nulls/NAs should be handled per column | Preprocessing guidance |
+| `outlier_detection_method` | Statistical method used for outlier detection | Consistent analysis approach |
+| `data_lineage_hash` | Hash of source data for change detection | Version control for datasets |
+
+### Column-Level Statistical Metadata
+| Field | Description | Example |
+|-------|-------------|---------|
+| `min_value` | Minimum observed value | `age: 18` |
+| `max_value` | Maximum observed value | `age: 69` |
+| `value_distribution` | Distribution type (normal, skewed, etc.) | `spending_score: uniform` |
+| `unique_value_count` | Number of distinct values | `gender: 2` |
+| `null_percentage` | Percentage of missing values | `summary: 0.05` |
+| `cardinality_level` | High/Medium/Low cardinality classification | `product: high` |
+
+### Semantic Classifications
+| Column | Semantic_Type | Analysis_Role | Tool_Hints |
+|--------|---------------|---------------|------------|
+| `gender` | categorical_demographic | segmentation_variable | ["groupby_candidate", "bias_check_required"] |
+| `age` | numerical_demographic | continuous_predictor | ["binning_candidate", "lifecycle_analysis"] |
+| `review` | unstructured_text | sentiment_source | ["nlp_processing", "topic_modeling", "embedding_candidate"] |
+| `product` | identifier | join_key | ["foreign_key", "dimension_table_lookup"] |
+| `spending_score` | derived_metric | target_variable | ["model_target", "segmentation_basis"] |
+| `Global_Sales` | business_metric | kpi | ["aggregation_target", "trend_analysis"] |
+
+### Text Processing Metadata
+| Field | Description | Tool Application |
+|-------|-------------|------------------|
+| `text_preprocessing_required` | Cleaning steps needed | Auto-preprocessing |
+| `expected_language` | Language for NLP processing | Model selection |
+| `text_complexity_level` | Reading level/complexity | Processing strategy |
+| `sentiment_polarity_expected` | Expected sentiment range | Validation checks |
+| `topic_domains` | Subject matter domains present | Domain-specific processing |
+### Business Context
+| Field | Description | Value |
+|-------|-------------|-------|
+| `analysis_objectives` | Primary research questions | ["customer_segmentation", "sales_forecasting", "platform_lifecycle"] |
+| `regulatory_constraints` | Data usage limitations | ["gdpr_compliant", "no_individual_identification"] |
+| `business_definitions` | Domain-specific term meanings | {"loyalty_points": "proprietary_scoring_system"} |
+| `temporal_context` | Time-based analysis considerations | {"sales_seasonality": "holiday_peaks", "platform_lifecycle": "generational_shifts"} |
+
+### Model Readiness Indicators
+| Column | Feature_Type | Encoding_Strategy | Missing_Strategy |
+|--------|--------------|-------------------|------------------|
+| `gender` | categorical | one_hot | mode_imputation |
+| `age` | numerical | standardization | median_imputation |
+| `platform` | high_cardinality_categorical | target_encoding | separate_category |
+| `review` | text | tfidf_or_embeddings | empty_string |
+| `year` | temporal | cyclical_encoding | interpolation |
+### Tool-Specific Configurations
+```json
+{
+  "visualization_hints": {
+    "spending_score": {"chart_type": "histogram", "bins": 20},
+    "sales_by_platform": {"chart_type": "stacked_bar", "group_by": "generation"},
+    "review_sentiment": {"chart_type": "violin_plot", "split_by": "product_category"}
+  },
+  "aggregation_preferences": {
+    "sales_data": ["sum", "mean", "median"],
+    "demographic_data": ["mode", "distribution"],
+    "text_data": ["count", "sentiment_score", "topic_distribution"]
+  },
+  "join_strategies": {
+    "reviews_to_sales": {
+      "key": "product",
+      "type": "left_join",
+      "validation": "one_to_many"
+    }
+  }
+}
+```
+
+### **Small Model Optimization Fields**
+
+### Prompt Engineering Metadata
+| Field | Purpose | Example |
+|-------|---------|---------|
+| `column_aliases` | Human-readable names for prompts | `remuneration: "annual_income_thousands_gbp"` |
+| `business_logic_rules` | Domain rules for validation | `Global_Sales >= NA_Sales + EU_Sales` |
+| `common_analysis_patterns` | Frequent query types | ["platform_comparison", "genre_trends", "customer_lifetime_value"] |
+| `contextual_explanations` | Background for non-domain experts | `loyalty_points: "Proprietary metric combining purchase value and engagement"` |
+
+### Complexity Indicators
+| Aspect | Level | Reasoning | Small_Model_Strategy |
+|--------|-------|-----------|---------------------|
+| `join_complexity` | Medium | Multiple datasets with hierarchical relationships | Pre-compute common joins |
+| `temporal_complexity` | High | Multi-generational platform lifecycle analysis | Segment by time periods |
+| `text_analysis_complexity` | High | Sentiment + topic modeling required | Use specialized text models |
+| `statistical_complexity` | Medium | Customer segmentation + forecasting | Break into simpler sub-problems |
+

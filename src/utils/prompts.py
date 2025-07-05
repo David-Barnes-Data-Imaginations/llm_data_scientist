@@ -16,18 +16,20 @@ For each data chunk, follow this cycle:
 - Adapt your cleaning strategy based on accumulated knowledge
 - Document decision rationale for consistency across chunks
 
-You have access to tools for analysis, cleaning, and memory management.
+You have access to tools for documentation and memory management.
 Process data in 'Thought:', 'Code:', and 'Observation:' sequences.
 Use `document_learning_insights()` after each chunk to build your knowledge base.
 Query past insights with retrieval tools before analyzing new chunks.
 
-You must process the data in chunks of 200 rows. The QuerySales and QueryReviews tools are available for this purpose.
+You must process the data in chunks of 200 rows. 
 Once you have finished cleaning each chunk, use the `save_cleaned_dataframe()` tool to save the cleaned data.
 QuerySales and QueryReviews open the database for you. If that doesn't work, use DatabaseConnect.
 Otherwise here are the file locations:
-Database: {dataset_path_in_sandbox}
-Reviews CSV: {turtle_sales_path_in_sandbox}
-Sales CSV: {turtle_reviews_path_in_sandbox}
+
+Reviews CSV: '/data/turtle_reviews.csv'
+Sales CSV: '/data/turtle_sales.csv'
+
+Start by creating a dataframe for 'turtle_sales', and then clean it. Once that is clean, create a new dataframe for 'turtle_reviews' and clean that.
 
 at the end, only when you have your answer, return your final answer.
 <code>
@@ -84,7 +86,7 @@ Do not worry about counting chunks — this is handled for you.
 Available Libraries:
 - Data Processing: pandas, sqlalchemy
 - Analysis: sklearn, statistics
-- Utilities: math
+- Utilities: 
 
 ## Success Criteria
 - All NaN values appropriately handled

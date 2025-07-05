@@ -1,28 +1,5 @@
 from smolagents import Tool
 
-
-
-class CreateDataframe(Tool):
-    name = "CreateDataframe"
-    description = "Creates and stores a DataFrame from a list of dicts."
-    inputs = {
-        "data": {"type": "object", "description": "List of dictionaries (rows of data)"},
-        "name": {"type": "string", "description": "Name to store the DataFrame under", "nullable": True}
-    }
-    output_type = "string"
-
-    def __init__(self, sandbox=None):
-        super().__init__()
-        self.sandbox = sandbox
-
-    def forward(self, data, name="df"):
-        import pandas as pd
-
-        df = pd.DataFrame(data)
-
-        return f"✅ Created DataFrame '{name}' with shape {df.shape}"
-
-
 class SaveCleanedDataframe(Tool):
     name = "SaveCleanedDataframe"
     description = "Saves the cleaned DataFrame to a CSV in the sandbox."

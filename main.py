@@ -88,14 +88,14 @@ def main():
         if ollama_process:
             ollama_process.terminate()
         return
-    pull_model("DeepSeek-R1")
+    pull_model("gemma3:12b")
 
     # Create agent with context manager support for cleanup
     agent = CustomAgent(
         tools=tools,
         sandbox=sandbox,
         metadata_embedder=metadata_embedder,
-        model_id="DeepSeek-R1"
+        model_id="gemma3:12b"
     )
     agent.telemetry = TelemetryManager()
 

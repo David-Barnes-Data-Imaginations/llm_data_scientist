@@ -69,11 +69,11 @@ class CustomAgent:
         """Custom agent wrapper that configures ToolCallingAgent with our tools and settings"""
 
         if model_id is None:
-            model_id = "ollama://gemma3:12b"
+            model_id = "gemma3:12b"
 
-        # model_id=f"ollama_chat/{model_id}" — this is apparently incorrect for newer LiteLLM + Ollama
-        # ✅ Fix:
-        model_id = "ollama/gemma3:12b"  # ✅ Correct LiteLLM + Ollama model name
+        # Ensure correct LiteLLM + Ollama model name format
+        if not model_id.startswith("ollama/"):
+            model_id = f"ollama/{model_id}"
 
         model = LiteLLMModel(
             model_id=model_id,
@@ -82,18 +82,23 @@ class CustomAgent:
             num_ctx=8192                        # fine to override context
         )
 
+        # Store sandbox reference for tools to use
+        self.sandbox = sandbox
+        
         self.agent = CodeAgent(
             tools=self.tools,
             model=model,
-            # Remove custom prompt templates for now to use defaults
             prompt_templates=prompt_templates,
             additional_authorized_imports=["pandas sqlalchemy scikit-learn statistics smolagents"],
             executor_type="e2b",
             use_structured_outputs_internally=True,
-            add_base_tools=False,
+            add_base_tools=True,  # Enable base tools including python_interpreter
             max_steps=30,
             verbosity_level=2,
         )
+        
+        # Copy files from our sandbox to the agent's sandbox
+        self._setup_agent_data()
 
         try:
             test_response = litellm.completion(
@@ -108,25 +113,62 @@ class CustomAgent:
 
         self.controller = StepController()
 
+    def _setup_agent_data(self):
+        """Copy data files from main sandbox to agent's sandbox"""
+        try:
+            # Get the agent's executor (sandbox)
+            agent_sandbox = self.agent.python_executor.sandbox
+            
+            # Copy the data files from our sandbox to the agent's sandbox
+            
+            # Copy turtle_reviews.csv
+            turtle_reviews_content = self.sandbox.files.read("/data/turtle_reviews.csv")
+            agent_sandbox.files.write("/data/turtle_reviews.csv", turtle_reviews_content)
+            
+            # Copy turtle_sales.csv  
+            turtle_sales_content = self.sandbox.files.read("/data/turtle_sales.csv")
+            agent_sandbox.files.write("/data/turtle_sales.csv", turtle_sales_content)
+            
+            # Copy database file
+            db_content = self.sandbox.files.read("/data/tg_database.db")
+            agent_sandbox.files.write("/data/tg_database.db", db_content)
+            
+            # Copy metadata file
+            metadata_content = self.sandbox.files.read("/data/metadata/turtle_games_dataset_metadata.md")
+            agent_sandbox.files.write("/data/metadata/turtle_games_dataset_metadata.md", metadata_content)
+            
+            print("✅ Successfully copied data files to agent's sandbox")
+            
+        except Exception as e:
+            print(f"⚠️ Warning: Could not copy files to agent sandbox: {str(e)}")
+
     def run(self, task: str, images=None, stream=False, reset=False, additional_args=None):
+        print(f"🔍 Agent.run called with task: '{task}', agentic_mode: {self.is_agentic_mode}")
+        
         # Check if user wants to begin agentic workflow
         if task.lower().strip() == "begin":
             self.is_agentic_mode = True
+            print("🚀 Switching to agentic mode")
             return self.start_agentic_workflow()
         
         # If in agentic mode, handle differently
         if self.is_agentic_mode:
+            print("🤖 Handling in agentic mode")
             return self.handle_agentic_mode(task, images, stream, reset, additional_args)
         
         # Otherwise, run in normal chat mode
+        print("💬 Handling in chat mode")
         return self.handle_chat_mode(task, images, stream, reset, additional_args)
 
     def handle_chat_mode(self, task: str, images=None, stream=False, reset=False, additional_args=None):
         """Handle normal chat interactions"""
-        # Use a simple chat model for basic conversation
+        # Use the same model as the agent for consistency
         try:
+            # Get the model_id from the agent's model
+            model_id = self.agent.model.model_id
+            
             response = litellm.completion(
-                model="ollama/gemma3:12b",
+                model=model_id,
                 messages=[{"role": "user", "content": task}],
                 api_base="http://localhost:11434",
                 stream=stream
@@ -149,7 +191,24 @@ class CustomAgent:
 
     def start_agentic_workflow(self):
         """Start the agentic workflow"""
-        return "🚀 Starting agentic workflow! I'm now in analysis mode. What would you like me to analyze?"
+        return """🚀 Starting agentic workflow! I'm now in analysis mode. 
+
+I have access to the Turtle Games dataset with the following files:
+- Reviews CSV: /data/turtle_reviews.csv
+- Sales CSV: /data/turtle_sales.csv  
+- Database: /data/tg_database.db
+- Metadata: /data/metadata/turtle_games_dataset_metadata.md
+
+I can help you clean and analyze this data using a systematic, chunk-based approach. What would you like me to do?
+
+Available tools:
+- RunCodeRaiseErrors: Execute Python code and raise exceptions if encountered
+- RetrieveMetadata: Query dataset metadata
+- DocumentLearningInsights: Record cleaning decisions and observations
+- RetrieveSimilarChunks: Query past cleaning insights
+- ValidateCleaningResults: Validate cleaned data
+- SaveCleanedDataframe: Save cleaned data
+- RunSQL: Execute SQL queries on the database"""
 
     def return_to_chat_mode(self):
         """Return to chat mode after agentic workflow completes"""
@@ -275,7 +334,7 @@ class ToolFactory:
                                                ValidateCleaningResults)
         from tools.dataframe_storage import SaveCleanedDataframe
         from tools.help_tools import GetToolHelp
-        from tools.code_tools import RunCodeRaiseErrors, RunSQL
+        from tools.code_tools import RunCodeRaiseErrors
         
 
         # Create instances of your custom tools
@@ -286,7 +345,6 @@ class ToolFactory:
             ValidateCleaningResults(sandbox=self.sandbox),
             GetToolHelp(sandbox=self.sandbox, metadata_embedder=self.metadata_embedder),
             RunCodeRaiseErrors(sandbox=self.sandbox),
-            RunSQL(sandbox=self.sandbox),
             SaveCleanedDataframe(sandbox=self.sandbox),
             
         ]

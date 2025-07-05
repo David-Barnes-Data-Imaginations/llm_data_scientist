@@ -326,15 +326,18 @@ class GradioUI:
             session_state["agent"] = self.agent
 
         try:
+            print(f"🔍 UI: interact_with_agent called with prompt: '{prompt}'")
             messages.append(gr.ChatMessage(role="user", content=prompt, metadata={"status": "done"}))
             yield messages
 
             # Check if agent is in agentic mode and handle final answer
             if hasattr(session_state["agent"], 'is_agentic_mode') and session_state["agent"].is_agentic_mode:
-                # Use the smolagents stream for agentic mode
+                print("🤖 UI: Agent is in agentic mode, using stream_to_gradio")
+                # Use the smolagents stream for agentic mode - use the underlying agent directly
                 for msg in stream_to_gradio(
-                        session_state["agent"], task=prompt, reset_agent_memory=self.reset_agent_memory
+                        session_state["agent"].agent, task=prompt, reset_agent_memory=self.reset_agent_memory
                 ):
+                    print(f"📧 UI: Received message type: {type(msg)}")
                     if isinstance(msg, gr.ChatMessage):
                         messages[-1].metadata["status"] = "done"
                         messages.append(msg)
@@ -357,13 +360,16 @@ class GradioUI:
                             messages.append(gr.ChatMessage(role="assistant", content=msg, metadata={"status": "pending"}))
                     yield messages
             else:
+                print("💬 UI: Agent is in chat mode, calling agent.run directly")
                 # Handle chat mode - direct response from agent
                 response = session_state["agent"].run(prompt, stream=False)
+                print(f"💬 UI: Got response: {response}")
                 messages.append(gr.ChatMessage(role="assistant", content=response, metadata={"status": "done"}))
                 yield messages
 
             yield messages
         except Exception as e:
+            print(f"❌ UI: Error in interaction: {str(e)}")
             yield messages
             raise gr.Error(f"Error in interaction: {str(e)}")
 
@@ -382,6 +388,7 @@ class GradioUI:
     def log_user_message(self, text_input, file_uploads_log=None):
         import gradio as gr
 
+        # Return the text_input as stored_messages so interact_with_agent gets the prompt
         return text_input, gr.Textbox(value="", interactive=True), gr.Button(interactive=True)
 
     def launch(self, share: bool = False, **kwargs):

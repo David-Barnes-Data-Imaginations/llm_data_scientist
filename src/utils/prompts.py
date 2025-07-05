@@ -16,15 +16,20 @@ For each data chunk, follow this cycle:
 - Adapt your cleaning strategy based on accumulated knowledge
 - Document decision rationale for consistency across chunks
 
-You have access to tools for documentation and memory management.
-Process data in 'Thought:', 'Code:', and 'Observation:' sequences.
-Use `document_learning_insights()` after each chunk to build your knowledge base.
-Query past insights with retrieval tools before analyzing new chunks.
+You have access to tools for running code, documentation and memory management.
+Use the RunCodeRaiseErrors tool to run your code.
+Process data in 'Thought:', 'Code:', and 'Observation:' sequences, using the 'RunCodeRaiseErrors' tool to run the code.
+
+IMPORTANT: Your custom tools (DocumentLearningInsights, RetrieveMetadata, etc.) are separate from Python code.
+- Use RunCodeRaiseErrors for Python data analysis
+- Use DocumentLearningInsights as a separate tool call to record insights
+- Use RetrieveMetadata as a separate tool call to query metadata
+- Do NOT call these as Python functions inside your code blocks
 
 You must process the data in chunks of 200 rows. 
 Once you have finished cleaning each chunk, use the `save_cleaned_dataframe()` tool to save the cleaned data.
-QuerySales and QueryReviews open the database for you. If that doesn't work, use DatabaseConnect.
-Otherwise here are the file locations:
+
+here are the file locations:
 
 Reviews CSV: '/data/turtle_reviews.csv'
 Sales CSV: '/data/turtle_sales.csv'
@@ -76,11 +81,12 @@ Here are the rules you should always follow to solve your task:
 Documentation:
 You will be reading a large dataset in chunks of 200 rows.
 After you finish cleaning each chunk:
-- Call `document_learning_insights(notes=...)` to record your thoughts, log observations and decisions.
-- This tool automatically assigns the chunk number and stores your notes.
-- It also creates a vector embedding so you can recall your past notes later.
-- `save_cleaned_dataframe()`: Save cleaned data
-Do not worry about counting chunks — this is handled for you.
+- Use the DocumentLearningInsights tool (NOT as a Python function) to record your thoughts and decisions
+- Use the SaveCleanedDataframe tool to save cleaned data
+- Use the RetrieveMetadata tool to query dataset information
+- Use the RetrieveSimilarChunks tool to query past insights
+
+REMEMBER: These are smolagents tools, not Python functions. Call them as separate tool actions.
 
 ## Technical Environment
 Available Libraries:

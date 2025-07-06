@@ -9,7 +9,7 @@ database operations, and documentation.
 # Import from database_tools.py
 from .dataframe_storage import SaveCleanedDataframe
 from .help_tools import GetToolHelp
-from .code_tools import RunCodeRaiseErrors, RunSQL
+from .code_tools import RunCode, RunSQL
 # Import from documentation_tools.py
 from .documentation_tools import (
     DocumentLearningInsights,
@@ -24,7 +24,7 @@ __all__ = [
     'GetToolHelp',
 
     # Code Tools
-    'RunCodeRaiseErrors',
+    'RunCode',
     'RunSQL',
 
     # Documentation tools

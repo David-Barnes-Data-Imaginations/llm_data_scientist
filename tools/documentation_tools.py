@@ -3,21 +3,13 @@ from smolagents import Tool
 
 class RetrieveMetadata(Tool):
     name = "RetrieveMetadata"
-    description = "Search the dataset metadata for relevant information"
+    description = """Search the dataset metadata for relevant information RetrieveMetadata(query="field types", k=5)"""
     inputs = {
         "query": {"type": "string", "description": "What to search for in the metadata"},
         "k": {"type": "integer", "description": "Number of results to return (default: 3)", "nullable": True}
     }
     output_type = "string"
-    help_notes = """ 
-    RetrieveMetadata: 
-    A tool that searches through the dataset's metadata to find relevant information based on your query.
-    Use this when you need to understand the dataset structure, field meanings, or any documented information about the data.
-
-    Example usage: 
-
-    metadata_info = RetrieveMetadata().forward(query="customer demographics", k=5)
-    """
+    help_notes = """ RetrieveMetadata(query="field types", k=5) """
 
     def __init__(self, sandbox=None, metadata_embedder=None):
         super().__init__()
@@ -25,14 +17,7 @@ class RetrieveMetadata(Tool):
         self.metadata_embedder = metadata_embedder
 
     def forward(self, query, k=3):
-        """
-        Args:
-            query (str): What to search for in the metadata
-            k (int): Number of results to return
 
-        Returns:
-            str: Relevant metadata chunks
-        """
         if not self.metadata_embedder:
             return "Error: Metadata embedder not available"
 
@@ -63,7 +48,7 @@ class DocumentLearningInsights(Tool):
 
     Example usage: 
 
-    result = DocumentLearningInsights().forward(notes="This chunk contains customer data with several outliers in the age column. Most values are between 25-45 years.")
+    result = DocumentLearningInsights(notes="This chunk contains customer data with several outliers in the age column. Most values are between 25-45 years.")
     """
 
     def __init__(self, sandbox=None):
@@ -179,7 +164,7 @@ class RetrieveSimilarChunks(Tool):
 
     Example usage: 
 
-    similar_chunks = RetrieveSimilarChunks().forward(query="customer age distribution patterns", num_results=3)
+    similar_chunks = RetrieveSimilarChunks(query="customer age distribution patterns", num_results=3)
     """
 
     def __init__(self, sandbox=None):
@@ -235,7 +220,7 @@ class ValidateCleaningResults(Tool):
 
      Example usage: 
 
-     result = ValidateData().forward(chunk=my_df, name="df_validated_chunk1")
+     result = ValidateData()(chunk=my_df, name="df_validated_chunk1")
     """
 
     def __init__(self, sandbox=None):

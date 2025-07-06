@@ -7,7 +7,7 @@ database operations, and system prompts.
 import os
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-from src.utils.prompts import TCA_SYSTEM_PROMPT, TCA_MAIN_PROMPT, CHAT_PROMPT
+from src.utils.prompts import CA_SYSTEM_PROMPT, CA_MAIN_PROMPT, CHAT_PROMPT
 from .metadata_embedder import MetadataEmbedder
 from .ollama_utils import (
     check_ollama_server,
@@ -21,8 +21,8 @@ from .ollama_utils import (
 
 
 __all__ = [
-    'TCA_SYSTEM_PROMPT',
-    'TCA_MAIN_PROMPT',
+    'CA_SYSTEM_PROMPT',
+    'CA_MAIN_PROMPT',
     'CHAT_PROMPT',
     'MetadataEmbedder'
 ]

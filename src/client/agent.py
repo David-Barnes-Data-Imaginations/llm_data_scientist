@@ -57,8 +57,6 @@ class StepController:
         if not manual:
             self.ready.set()  # Unblock any pending waits
 
-
-
 class CustomAgent:
     """Custom agent wrapper that configures ToolCallingAgent with our tools and settings"""
 
@@ -66,6 +64,7 @@ class CustomAgent:
         self.metadata_embedder = metadata_embedder
         self.tools = tools or []
         self.is_agentic_mode = False
+
         """Custom agent wrapper that configures ToolCallingAgent with our tools and settings"""
 
         if model_id is None:
@@ -89,9 +88,10 @@ class CustomAgent:
             tools=self.tools,
             model=model,
             prompt_templates=prompt_templates,
-            additional_authorized_imports=["pandas sqlalchemy scikit-learn statistics smolagents"],
+            additional_authorized_imports=["pandas sqlalchemy scikit-learn statistics smolagents seaborn"],
             executor_type="e2b",
             use_structured_outputs_internally=True,
+            planning_interval=5,
             add_base_tools=True,  # Enable base tools including python_interpreter
             max_steps=30,
             verbosity_level=2,
@@ -103,7 +103,7 @@ class CustomAgent:
         try:
             test_response = litellm.completion(
                 model="ollama/qwen2.5-coder:32b",
-                messages=[{"role": "user", "content": "What is the meaning of life?" }],
+                messages=[{"role": "user", "content": "." }],
                 api_base="http://localhost:11434",
                 stream=False
             )
@@ -111,7 +111,6 @@ class CustomAgent:
         except Exception as e:
             print("❌ Ollama sanity check failed:", str(e))
 
-        self.controller = StepController()
 
     def _setup_agent_data(self):
         """Copy data files from main sandbox to agent's sandbox"""
@@ -193,22 +192,20 @@ class CustomAgent:
         """Start the agentic workflow"""
         return """🚀 Starting agentic workflow! I'm now in analysis mode. 
 
+I can help you clean and analyze this data using a systematic, chunk-based approach.
+
 I have access to the Turtle Games dataset with the following files:
 - Reviews CSV: /data/turtle_reviews.csv
-- Sales CSV: /data/turtle_sales.csv  
-- Database: /data/tg_database.db
-- Metadata: /data/metadata/turtle_games_dataset_metadata.md
 
-I can help you clean and analyze this data using a systematic, chunk-based approach. What would you like me to do?
+I should clean the dataset in chunks of 200 rows and use the SaveCleanedDataframe tool to save the results.
+Once all chunks are cleaned, I will print the dataframe and submit "Dataframe cleaned" as my final answer.
 
-Available tools:
-- RunCodeRaiseErrors: Execute Python code and raise exceptions if encountered
-- RetrieveMetadata: Query dataset metadata
-- DocumentLearningInsights: Record cleaning decisions and observations
-- RetrieveSimilarChunks: Query past cleaning insights
-- ValidateCleaningResults: Validate cleaned data
-- SaveCleanedDataframe: Save cleaned data
-- RunSQL: Execute SQL queries on the database"""
+To run code, use the 'RunCode' tool without any ticks:
+Correct: RunCode(import pandas as pd)
+Incorrect: RunCode(```python import pandas as pd```)
+
+
+ """
 
     def return_to_chat_mode(self):
         """Return to chat mode after agentic workflow completes"""
@@ -271,6 +268,7 @@ class SmartContextManager:
         reasoning_preface = AgentText(text=f"Can you reason through this step by step before taking any action?\n{task}")
         self.context = SmartContextManager()
         trace = self.agent.run(reasoning_preface)
+        self.controller = StepController()
 
         for i, step in enumerate(trace.steps):
             # Append the step prompt to context
@@ -303,7 +301,7 @@ class SmartContextManager:
 
             # Slight breathing room after first step
             if i == 0:
-                await asyncio.sleep(1.2)
+                await asyncio.sleep(0.5)
 
         # Check if we have a final answer and signal return to chat mode
         if hasattr(trace, 'final_answer') and trace.final_answer:
@@ -334,7 +332,7 @@ class ToolFactory:
                                                ValidateCleaningResults)
         from tools.dataframe_storage import SaveCleanedDataframe
         from tools.help_tools import GetToolHelp
-        from tools.code_tools import RunCodeRaiseErrors
+        from tools.code_tools import RunCode
         
 
         # Create instances of your custom tools
@@ -344,7 +342,7 @@ class ToolFactory:
             RetrieveSimilarChunks(sandbox=self.sandbox),
             ValidateCleaningResults(sandbox=self.sandbox),
             GetToolHelp(sandbox=self.sandbox, metadata_embedder=self.metadata_embedder),
-            RunCodeRaiseErrors(sandbox=self.sandbox),
+            RunCode(sandbox=self.sandbox),
             SaveCleanedDataframe(sandbox=self.sandbox),
             
         ]

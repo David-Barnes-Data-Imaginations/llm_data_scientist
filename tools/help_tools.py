@@ -17,13 +17,7 @@ class GetToolHelp(Tool):
     Example usage: 
 
     # Search by tool name
-    help_text = GetToolHelp(query="QuerySales")
-    
-    # Search by functionality
-    help_text = GetToolHelp(query="merge two dataframes")
-    
-    # Search by problem description
-    help_text = GetToolHelp(query="how to handle missing values")
+    query="DocumentCleaningInsights"
     """
 
     def __init__(self, sandbox=None, metadata_embedder=None):

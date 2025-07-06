@@ -22,3 +22,6 @@ transformers~=4.53.0
 pydantic_core~=2.33.2
 faiss-cpu~=1.11.0
 duckduckgo-search
+altair==5.5.0
+narwhals==1.45.0
+plotly==6.2.0

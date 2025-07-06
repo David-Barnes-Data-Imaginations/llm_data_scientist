@@ -4,24 +4,26 @@ class SaveCleanedDataframe(Tool):
     name = "SaveCleanedDataframe"
     description = "Saves the cleaned DataFrame to a CSV in the sandbox."
     inputs = {
-        "df": {"type": "object", "description": "The cleaned DataFrame"},
+        "df": {"type": "object", "description": "The cleaned DataFrame", "nullable": True},
         "filename": {"type": "string", "description": "File name for the CSV output", "optional": True, "nullable": True}
     }
     output_type = "string"  # Returns confirmation message
+    help_notes = """ 
+    SaveCleanedDataframe: 
+    A tool that must be used after cleaning each chunk of data.
+    Example Arguments: 
+    
+    To save for turtle_reviews:
+    SaveCleanedDataframe(your_cleaned_dataframe, "cleaned_reviews.csv")
+    SaveCleanedDataframe(your_cleaned_dataframe, "cleaned_sales.csv")
+    """
 
     def __init__(self, sandbox=None):
         super().__init__()
         self.sandbox = sandbox
 
-    def forward(self, df, filename="tg_reviews_cleaned.csv"):
-        """
-        Args:
-            df (pd.DataFrame): The cleaned DataFrame
-            filename (str): File name for the CSV output
+    def forward(self, df=None, filename=None):
 
-        Returns:
-            str: Confirmation message
-        """
         import pandas as pd
         
         # Convert to DataFrame if needed

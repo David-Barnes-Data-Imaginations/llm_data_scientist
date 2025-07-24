@@ -9,7 +9,17 @@ This repository demonstrates how to build a **data‑cleaning agent** on top of 
   
   Smolagents makes it simple to build such agents.  You create a model (e.g. a local LLM or one hosted via HuggingFace), define a few Python functions annotated with the `@tool` decorator, and pass them to a `CodeAgent`.  The agent will generate code at each step to solve the task, executing it in a sandboxed environment and using the tools when needed.  This **code‑first approach** is more natural for LLMs and more powerful for complex problems[dev.to](https://dev.to/hayerhans/smolagents-the-simplest-way-to-build-powerful-ai-agents-18o#:~:text=smolagents%20uses%20a%20code,it%20might%20generate%20code%20like).  
   
-  The animated diagram below (extracted from HuggingFace’s launch post) gives an intuition for how the agentic loop in smolagents operates:  
+    
+<h2 align='center'>
+  The animated diagram below (extracted from HuggingFace’s launch post) gives an intuition for how the agentic loop in smolagents operates. :computer:
+</h2>
+<br><br>
+<p align="center">
+  <img src="./Agent_ManimCE.gif" alt="SmolAgent animated diagram">
+</p>
+
+
+
 - ## Project overview
   
   The goal of this repository was to build a self‑contained *Data Scientist* agent that could revisit and improve my masters‑level data analytics project.  The agent processes sales and user‑feedback data for a fictional video‑game retailer called **Turtle Games**.  The original data science project focused on regression, clustering, support‑vector machines and other classic techniques; here the emphasis is on **cleaning**.  Once the agent runner was working I realised that the hardest part was dealing with messy data, and that the agentic loop (combined with smolagents) could automate much of this work.  I therefore pivoted the code to focus on data cleansing and have since reused the same framework for InfoSec research (e.g. profiling attackers with knowledge graphs).  

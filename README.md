@@ -1,7 +1,7 @@
-- # Data Scientist CodeAgent
+# Data Scientist CodeAgent
   
 This repository demonstrates how to build a **data‑cleaning agent** on top of the [smolagents](https://huggingface.co/blog/smolagents) framework.  The agentic loop was initially designed to replicate the final project from my Data Analytics Masters course, but it proved so flexible and powerful that I now reuse the same code base for InfoSec and other side projects.  This README walks through the ideas behind smolagents, explains why *code agents* are powerful, documents the agentic loop used in this project and provides guidance on running it safely.  
-- ## Why smolagents and code‑based actions?
+## Why smolagents and code‑based actions?
   
   Traditional large language models (LLMs) are **passive** – they generate text, but they cannot decide which external tools to call or how to manipulate data.  AI agents close this gap by allowing an LLM to **act**: they can search the web, call APIs, execute code, and interact with databases [dev.to](https://dev.to/hayerhans/smolagents-the-simplest-way-to-build-powerful-ai-agents-18o#:~:text=Ever%20wonder%20how%20language%20models,language%20models%20and%20AI%20agents).  In smolagents the agent is decomposed into a *brain* (the LLM) and a *body* (a set of tool functions)[dev.to](https://dev.to/hayerhans/smolagents-the-simplest-way-to-build-powerful-ai-agents-18o#:~:text=As%20shown%20in%20the%20diagram,consists%20of%20two%20fundamental%20components).  The library is intentionally lightweight (~1,000 lines of code)[dev.to](https://dev.to/hayerhans/smolagents-the-simplest-way-to-build-powerful-ai-agents-18o#:~:text=smolagents%20brilliantly%20implements%20this%20architecture,agents%20shouldn%27t%20require%20complex%20architecture), focusing on a minimal API and ease of extension.  
   

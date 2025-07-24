@@ -44,16 +44,12 @@ This repository demonstrates how to build a **data‑cleaning agent** on top of 
 - Trigger agentic mode to begin cleaning (see source for the exact command).  Optionally switch back to chat with `stop`.
 - Allow the agent to plan and execute its multi‑step loop.  Progress is displayed both in the command line and in Gradio blocks.  Logs can also be sent to OpenTelemetry / Langfuse (disabled by default while debugging).
 - When finished, retrieve the cleaned CSVs and review the documented insights.
-- ### Example run
+- ### Example Run Snippet
   
-  The only record I have of an early run is in the attached `.rtf` document.  The version shown below has been lightly edited to correct a couple of mis‑steps where the agent initially called the wrong tool.  It demonstrates the phased approach, chunk processing and outlier removal:  
+ Demonstrating the phased approach, chunk processing and outlier removal:  
   
   ```
-  text
-  
-  CopyEdit
-  
-  ? Starting agentic workflow! I'm now in analysis mode.
+  ! Starting agentic workflow! I'm now in analysis mode.
   I can help you clean and analyse this data using a systematic, chunk‑based approach.
   I have access to the Turtle Games dataset with the following files:
   • Reviews CSV: /data/turtle_reviews.csv

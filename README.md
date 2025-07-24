@@ -90,7 +90,7 @@ This repository demonstrates how to build a **data‑cleaning agent** on top of 
 - **Omit the trigger phrases for safety.**  Hugging Face intentionally does not publicise the exact commands that start multi‑step execution.  For similar reasons this README does not spell them out; you can find them in `src/client/agent.py` if you are comfortable reading the code.  This helps prevent inexperienced users from accidentally starting long‑running loops on their parents’ PCs.
 - **Logging and monitoring.**  The project previously used OpenTelemetry with Langfuse to record runs.  Logging is currently printed to the console and Gradio UI; re‑enable telemetry once you are comfortable with the behaviour.
   
-  We withhold some implementation details here so that potential employers can understand the design while still requiring them to examine the code.  A future version will provide a Gradio link to run the agent on my mini‑ITX build (AMD 5600XT CPU, RTX 4070 Super GPU, custom case fans and Samsung 990 Pro SSD).  Feel free to reach out for a live demo.  
+I withhold some implementation details here so that potential employers can understand the design while still requiring them to examine the code.  A future version will provide a Gradio link to run the agent on my Website (under construction).  Feel free to reach out for a live demo.  
 - ## Further work
 - Re‑enable OpenTelemetry and Langfuse for full run tracing.
 - Extend the agent with `davidgnome` integration for shell access and file operations.

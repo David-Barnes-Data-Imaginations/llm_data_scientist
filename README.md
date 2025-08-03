@@ -20,7 +20,7 @@ This repository demonstrates how to build a **data‑cleaning agent** on top of 
   
     
 <h2 align='center'>
-  The animated diagram below (extracted from HuggingFace’s launch post) gives an intuition for how the agentic loop in smolagents operates. :computer:
+  The animated diagram below gives an intuition for how the agentic loop in smolagents operates. :computer:
 </h2>
 <br><br>
 <p align="center">

@@ -1,8 +1,11 @@
 # Data Scientist CodeAgent
   
 This repository demonstrates how to build a **data‑cleaning agent** on top of the [smolagents](https://huggingface.co/blog/smolagents) framework.  The agentic loop was initially designed to replicate the final project from my Data Analytics Masters course, but it proved so flexible and powerful that I now reuse the same code base for InfoSec and other side projects.  This README walks through the ideas behind smolagents, explains why *code agents* are powerful, documents the agentic loop used in this project and provides guidance on running it safely.  
-## Why smolagents and code‑based actions?
-  
+
+## Why smolagents and code‑based actions? 
+
+> *Hugging Face repeatedly uses these themes below, so I've lifted and summarised for consistency and ethics*
+
   Traditional large language models (LLMs) are **passive** – they generate text, but they cannot decide which external tools to call or how to manipulate data.  AI agents close this gap by allowing an LLM to **act**: they can search the web, call APIs, execute code, and interact with databases [dev.to](https://dev.to/hayerhans/smolagents-the-simplest-way-to-build-powerful-ai-agents-18o#:~:text=Ever%20wonder%20how%20language%20models,language%20models%20and%20AI%20agents).  In smolagents the agent is decomposed into a *brain* (the LLM) and a *body* (a set of tool functions)[dev.to](https://dev.to/hayerhans/smolagents-the-simplest-way-to-build-powerful-ai-agents-18o#:~:text=As%20shown%20in%20the%20diagram,consists%20of%20two%20fundamental%20components).  The library is intentionally lightweight (~1,000 lines of code)[dev.to](https://dev.to/hayerhans/smolagents-the-simplest-way-to-build-powerful-ai-agents-18o#:~:text=smolagents%20brilliantly%20implements%20this%20architecture,agents%20shouldn%27t%20require%20complex%20architecture), focusing on a minimal API and ease of extension. That said it is in my humble opinion, by far the most powerful agentic framework since you can effectively have the AI build anything. Hugging Face provides various built in tools (Web Search etc) and you can imports 'Spaces' for deep research or whatever functionality you choose.  
   
   
@@ -101,22 +104,95 @@ This repository demonstrates how to build a **data‑cleaning agent** on top of 
   **Reflection:**
   Documented the cleaning strategy, noted that the IQR threshold was effective and planned to repeat the process for `turtle_reviews`.  Future iterations will incorporate data‑type validation for non‑numeric columns and automated summarisation of removed rows.
   ```
-- ## Ethical considerations and safety
+---
+## Ethical considerations and safety
   
-  Running a code agent gives the LLM a high degree of control over your environment.  Always remember that agents are experimental and should be treated accordingly.  In particular:  
+Running a code agent gives the LLM a high degree of control over your environment.  Always remember that agents are experimental and should be treated accordingly.
+
+### In particular:  
 - **Sandbox everything.**  The agent executes arbitrary code; only run it on a dedicated NVMe inside an [E2B](https://e2b.dev) sandbox or an equivalent container.  Never point it at your host operating system or personal files.
 - **Keep secrets out of scope.**  Do not grant the agent access to sensitive credentials or systems.  Tools should be whitelisted explicitly.
-- **Omit the trigger phrases for safety.**  Hugging Face intentionally does not publicise the exact commands that start multi‑step execution.  For similar reasons this README does not spell them out; you can find them in `src/client/agent.py` if you are comfortable reading the code.  This helps prevent inexperienced users from accidentally starting infinite‑running loops (or worse) on their parents’ PCs.
-- **Logging and monitoring.**  The project previously used OpenTelemetry with Langfuse to record runs.  Logging is currently printed to the console and Gradio UI; re‑enable telemetry once you are comfortable with the behaviour.
-  
-I withhold some implementation details here so that potential employers can understand the design whilst still requiring users to examine the code as a safety measure.  A future version will provide a Gradio link to run the agent on my Website (under construction).  Feel free to reach out for a live demo.  
-- ## Further work
-- Re‑enable OpenTelemetry and Langfuse for full run tracing.
-- Extend the agent with `[davidgnome](https://github.com/David-Barnes-Data-Imaginations/davidgnome_alpha)` integration for shell access and file operations.
-- Improve the data‑cleaning heuristics (e.g. handling categorical typos, time series anomalies and missing data).
-- Explore more compact models to run on low‑power devices; current candidates include Gemma 3‑12B (small but surprisingly effective) and Qwen 2.5 (larger but robust).
-  
+- **Omit the trigger phrases for safety.**  Hugging Face intentionally does not publicise 'examples with fully functional *CodeAgents* due to the risks if the library is implemented poorly.
+- It explains [SmolAgents](https://github.com/huggingface/smolagents) in great detail on its [Agents Course](https://huggingface.co/learn/agents-course/en/unit0/introduction), but at implemention you'll find a 'maze of misdirection' and ommisions. It took me many hours of reading through the Smolagents library on Github, whilst comparing the code and documentation to the HF notes. One 'red herring' in particular required ~3-4 days of testing debug a critical feature.
+- This is not intended to be evasive or to make things difficult for learners, it's (presumably) intended to prevent inexperienced users from accidentally starting infinite‑running loops, breaking their PC (or someone elses), or compromising their entire network and data.
+
+**For similar reasons this README does not spell out:**
+- The commands to switch to 'Agent Mode', and the commands to 'start the loop' in my framework. You can find them in the code. I stick to the presumed 'Hugging Face' principle of: "if you can't work out the code, you shouldn't be using CodeAgents yet".
+- How the SmolAgents library works under the hood. It's open-source on github so you'll know you're at a point where you _could_ use the library safely, when you have learned how the library works 'back-to-front'.
+- To learn the library, here's the steps I'd suggest:
+  - > ### Do the  [Agents Course](https://huggingface.co/learn/agents-course/en/unit0/introduction). Its intended to be 'roughly' 60 hours for full completion, though if you're exploring all its concepts (it suggests exploration methods), expect it to be around double that.
+    > ### Read all documentation resources at the [bottom of the SmolAgents Resources](https://huggingface.co/learn/agents-course/en/unit2/smolagents/introduction#resources) page. I'll add thenm below these bullets again for ease of access, but expect it to be perhaps 30 hours.
+  - > ### _Optional but advisable_ Do the [MCP Course](https://huggingface.co/learn/mcp-course/unit0/introduction). You don't need MCP for a runner like mine (i pulled MCP out early on) but it just helps to further understand agentic frameworks
+  - > ### Implement all the examples in the [Cookbook: Agents-Recipes](https://huggingface.co/learn/cookbook/en/agents) and [Cookbook: MLOPS-Recipes](https://huggingface.co/learn/cookbook/en/mlflow_ray_serve). You don't need to use Rayserve but it reinforces the 'monitoring' concepts.
+  - > ### Monitoring Runs: If you did the above, you'll know the importance and steps to implement tracing (via Langfuse, OpenTelemmetry, Pheonix etc) or build a 'realtime runner' test-bed-sandbox, like mine.
+  - > ### *Start with 'ToolCallingAgent'* to implement an agentic solution. *ONLY* move on to 'CodeAgent' once you have done so.
+    - > ToolCallingAgent's can still run code if you write it into the tools (at one point during testing I had something like 27 tools with python code, you can see them in my early commits).
+    - > My build safety process is below (in 3 diagrams due to Github's overly restrictive 'Mermaid' rules preventing one clean version)
+
+```mermaid
+flowchart LR
+    A[Build with ToolCallingAgent<br/>Custom tools only and required libs] --> B[Add tracing and realtime runner]
+    B --> C[Test with local and cloud LLMs]
+    C --> D[Switch to CodeAgent<br/>Keep only approved tools]
+    D --> E[Prompt restrict to given tools<br/>Run tests]
+    E --> F[Add restricted Python interpreter<br/>Remove custom tools gradually<br/>Agent writes code for removed tools]
+```
+### Sequence / Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant Dev
+    participant Agent
+    Dev->>Agent: Build ToolCallingAgent with custom tools
+    Note over Dev,Agent: Add tracing and realtime runner
+    Dev->>Agent: Test with local and cloud LLMs
+    Dev->>Agent: Switch to CodeAgent (no python tool)
+    Dev->>Agent: Prompt restrict to given tools
+    Dev->>Agent: Add restricted Python interpreter
+    Agent-->>Dev: Replace custom tools with code
+
+```
+Sub-Graph Grouped by phase
+
+```mermaid
+flowchart TD
+    subgraph Phase 1
+      A1[ToolCallingAgent<br/>Custom tools only]
+      A2[Tracing + realtime runner]
+      A1 --> A2
+    end
+
+    subgraph Phase 2
+      B1[Test with local and cloud LLMs]
+    end
+
+    subgraph Phase 3
+      C1[Switch to CodeAgent]
+      C2[Keep only approved tools]
+      C1 --> C2
+    end
+
+    subgraph Phase 4
+      D1[Prompt restrict to given tools]
+      D2[Add restricted Python interpreter]
+      D3[Remove custom tools gradually]
+      D4[Agent writes code for removed tools]
+      D1 --> D2 --> D3 --> D4
+    end
+
+    A2 --> B1 --> C1 --> D1
+
+
+```
+
+### 🚫🚫🚫PROMPT INJECTION!: **DO NOT** leave all the 'CodeAgent - base tools' in until you have experience with the 'SmolAgents' framework.
+
+Doing so gives the agent _carte blanche_ to search for anything online, leaving your system vulnerable to 'Prompt Injections'. If you don't know how to remove certain base tools from 'Smolagents', keep practicing with 'ToolCallingAgent' until you do.
+
+### ⛔⛔⛔ Prompt Injections involve **Bad Actors** leaving text formatted as 'System Prompts' in websites, poorly managed message boards etc. 
+
+They would likely be in the same colour text as the background meaning you can't see them, whilst the agent can. It's 'Low Risk - High Impact' but even if you have a containerized environment, even trivial 'Prompt Injections' could trick your agent into producing images in an 'infinite loop' leaving hardware unusable.
 ---
   
   By combining smolagents’ code‑first philosophy[huggingface.co](https://huggingface.co/blog/smolagents#:~:text=Code%20agents) with a carefully designed agentic loop, this project demonstrates that even complex data cleaning tasks can be automated safely.  I hope this repository provides useful insights and inspiration for building your own bespoke AI agents.  
--
+
